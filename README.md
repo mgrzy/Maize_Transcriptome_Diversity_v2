@@ -1,7 +1,7 @@
 # Maize Cold Spring
 
 ## Overview
-This repository contains the **code, configs, and documentation** for the Maize Cold Spring project.  
+This repository contains the **code, configs, and documentation** for the Maize Transcriptome Diversity project.  
 The project is executed in two environments:
 - **Local (RStudio)** → exploratory analysis, visualization, small-scale testing  
 - **HPC (SLURM)** → heavy pipelines, full-scale computations  
