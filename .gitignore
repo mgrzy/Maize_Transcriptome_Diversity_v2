@@ -4,8 +4,13 @@
 # Ignore all raw and processed data (too large for Git).
 data/raw/*
 !data/raw/.gitkeep
+!data/raw/meta/
+!data/raw/meta/**
 data/processed/*
 !data/processed/.gitkeep
+!data/processed/meta/
+!data/processed/meta/**
+data/processed/meta/.~lock.*#
 
 
 # ===============================
