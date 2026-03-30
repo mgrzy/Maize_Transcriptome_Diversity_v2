@@ -6,8 +6,8 @@
 #SBATCH --time=48:00:00
 #SBATCH --account=g98-2488
 #SBATCH --partition=okeanos
-#SBATCH --error=logs/alignmenttemp.%A_%a.err
-#SBATCH --output=logs/alignmenttemp.%A_%a.out
+#SBATCH --error=logs/alignment/temp.%A_%a.err
+#SBATCH --output=logs/alignment/temp.%A_%a.out
 #SBATCH --array=1-30
 
 module load common/anaconda/3.8
