@@ -4,7 +4,7 @@
 #SBATCH --ntasks-per-node=12
 #SBATCH --mem=50G
 #SBATCH --time=48:00:00
-#SBATCH --account=g98-2081
+#SBATCH --account=g98-2488
 #SBATCH --partition=okeanos
 #SBATCH --error=logs/alignmenttemp.%A_%a.err
 #SBATCH --output=logs/alignmenttemp.%A_%a.out
