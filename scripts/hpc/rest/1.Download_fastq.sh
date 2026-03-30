@@ -1,3 +1,4 @@
+#!/bin/sh
 #SBATCH --job-name=downTemp        # Descriptive job name
 #SBATCH --nodes=1                      # One node
 #SBATCH --ntasks-per-node=1            # One task per node
