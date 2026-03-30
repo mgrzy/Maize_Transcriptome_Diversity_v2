@@ -1,0 +1,46 @@
+# ===============================
+# DATA
+# ===============================
+# Ignore all raw and processed data (too large for Git).
+data/raw/*
+!data/raw/.gitkeep
+data/processed/*
+!data/processed/.gitkeep
+
+
+# ===============================
+# RESULTS
+# ===============================
+# Ignore heavy results and temporary runs.
+results/full/*
+results/full/
+!results/full/.gitkeep
+
+# Keep summary results (small CSV/plots are tracked).
+!results/summary/
+!results/summary/.gitkeep
+
+# Track placeholder for the parent results directory.
+!results/.gitkeep
+
+# ===============================
+# LOGS
+# ===============================
+logs/*
+!logs/.gitkeep
+
+# ===============================
+# HPC / Workflow cache
+# ===============================
+.slurm*
+*.out
+*.err
+
+# ===============================
+# R / RStudio
+# ===============================
+.Rproj.user/
+*.Rproj
+.Rhistory
+.RData
+.Ruserdata
