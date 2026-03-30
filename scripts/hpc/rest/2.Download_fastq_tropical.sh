@@ -9,7 +9,7 @@
 #SBATCH --partition=okeanos            # Partition/queue
 #SBATCH --error=logs/download/dowloadTrop.%A_%a.err
 #SBATCH --output=logs/download/dowloadTrop.%A_%a.out
-#SBATCH --array=1-10                   # Array tasks
+#SBATCH --array=1-10                 # Array tasks
 
 set -euo pipefail
 
