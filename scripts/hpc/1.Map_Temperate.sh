@@ -1,7 +1,7 @@
 #!/bin/bash -l
 #SBATCH --job-name=bwa_temp
 #SBATCH --nodes=1
-#SBATCH --ntasks-per-node=12
+#SBATCH --ntasks-per-node=16
 #SBATCH --mem=50G
 #SBATCH --time=48:00:00
 #SBATCH --account=g98-2488
