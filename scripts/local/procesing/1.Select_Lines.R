@@ -23,6 +23,11 @@ filereport <- read.delim(
     names = c("fastq_ftp_1", "fastq_ftp_2"),
     too_few = "align_start"
   )
+filereport_runs <- read.delim(
+  "data/raw/meta/filereport_read_run_PRJNA661271.tsv",
+  check.names = FALSE
+) %>%
+  select(sample_accession, run_accession)
 
 colnames(meta)[1] <- "Taxa"
 
@@ -151,3 +156,13 @@ selection_priority_summary <- selected_lines %>%
 
 readr::write_csv(selected_lines, "data/processed/selected_lines.csv")
 
+# Export Taxa-SRR mapping for selected lines
+taxa_srr <- selected_lines %>%
+  select(Taxa, BioSample...6) %>%
+  distinct() %>%
+  left_join(filereport_runs, by = c("BioSample...6" = "sample_accession")) %>%
+  filter(!is.na(run_accession)) %>%
+  transmute(Taxa = Taxa, SRR = run_accession) %>%
+  arrange(Taxa, SRR)
+
+readr::write_tsv(taxa_srr, "data/processed/meta/taxa_srr_selected.txt")
