@@ -93,7 +93,7 @@ for ((i=start_idx; i<end_idx; i++)); do
 
   echo "Aligning with speedseq for $name"
   mkdir -p "$workDir/${name}"
-  ./.././../soft/speedseq/bin/speedseq align \
+  ../soft/speedseq/bin/speedseq align \
     -o "$BAMpath/${name}" \
     -R $(echo -e "@RG\tID:${name}\tSM:${name}\tLB:libX\tPL:ILLUMINA\tPU=unitX") \
     -t 12 \
