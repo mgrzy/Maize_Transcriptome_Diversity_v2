@@ -9,7 +9,7 @@
 #SBATCH --partition=okeanos            # Partition/queue
 #SBATCH --error=logs/download/dowloadTemp.%A_%a.err
 #SBATCH --output=logs/download/dowloadTemp.%A_%a.out
-#SBATCH --array=1-10                   # chr_1..chr_10
+#SBATCH --array=1                  # chr_1..chr_10
 
 set -euo pipefail
 
