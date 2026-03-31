@@ -8,26 +8,40 @@
 #SBATCH --partition=okeanos
 #SBATCH --error=logs/alignment/temp.%A_%a.err
 #SBATCH --output=logs/alignment/temp.%A_%a.out
-#SBATCH --array=1-30
+#SBATCH --array=1-76
 
 module load common/anaconda/3.8
 conda activate geno
 
 set -euo pipefail
 
-# Paths
-fastqPath="data/raw/fastq/temp"
-BAMpath="results/full/BAM/temperate"
-repoPath="results/full/fastp"
-geno="../SNPcall/genome/maizeV5.fa.gz"
-workDir="workdir"
-mapFile="data/raw/meta/SrrToGeno/Temp.txt"
-speedseqBin="../soft/speedseq/bin/speedseq"
+script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
+project_root=$(cd "$script_dir/../.." && pwd)
 
-mkdir -p "$BAMpath" "$repoPath" "$workDir" "logs/alignment"
+# Paths
+fastqPath="$project_root/data/raw/fastq/temp"
+BAMpath="$project_root/results/full/BAM/temperate"
+repoPath="$project_root/results/full/fastp"
+geno="$project_root/../SNPcall/genome/maizeV5.fa.gz"
+workDir="$project_root/workdir"
+mapFile="$project_root/data/raw/meta/SrrToGeno/Temp.txt"
+speedseqBin="$project_root/../soft/speedseq/bin/speedseq"
+
+mkdir -p "$BAMpath" "$repoPath" "$workDir" "$project_root/logs/alignment"
+cd "$project_root"
 
 if [[ ! -f "$mapFile" ]]; then
   echo "Mapping file not found: $mapFile" >&2
+  exit 1
+fi
+
+if [[ ! -x "$speedseqBin" ]]; then
+  echo "speedseq executable not found: $speedseqBin" >&2
+  exit 1
+fi
+
+if [[ ! -f "$geno" ]]; then
+  echo "Reference genome not found: $geno" >&2
   exit 1
 fi
 
@@ -51,16 +65,20 @@ fi
 
 echo "Processing sample $line_no of $total_samples: $Taxa ($samp)"
 
-#fastp \
-#  -i "${fastqPath}/${samp}_1.fastq.gz" \
-#  -I "${fastqPath}/${samp}_2.fastq.gz" \
-#  -o "${workDir}/${Taxa}_1.fastq.gz" \
-#  -O "${workDir}/${Taxa}_2.fastq.gz" \
-#  -w 12 \
-#  -h "${repoPath}/${Taxa}.html" \
-#  -j "${repoPath}/${Taxa}.json"
-  
-conda deactivate
+if [[ ! -f "${fastqPath}/${samp}_1.fastq.gz" || ! -f "${fastqPath}/${samp}_2.fastq.gz" ]]; then
+  echo "FASTQ files missing for $Taxa ($samp) in $fastqPath" >&2
+  conda deactivate
+  exit 1
+fi
+
+fastp \
+  -i "${fastqPath}/${samp}_1.fastq.gz" \
+  -I "${fastqPath}/${samp}_2.fastq.gz" \
+  -o "${workDir}/${Taxa}_1.fastq.gz" \
+  -O "${workDir}/${Taxa}_2.fastq.gz" \
+  -w 12 \
+  -h "${repoPath}/${Taxa}.html" \
+  -j "${repoPath}/${Taxa}.json"
 
 "$speedseqBin" align \
   -o "${BAMpath}/${Taxa}" \
@@ -71,6 +89,12 @@ conda deactivate
   "${workDir}/${Taxa}_1.fastq.gz" \
   "${workDir}/${Taxa}_2.fastq.gz"
 
+if [[ ! -f "${BAMpath}/${Taxa}.bam" ]]; then
+  echo "speedseq finished but no BAM was created: ${BAMpath}/${Taxa}.bam" >&2
+  conda deactivate
+  exit 1
+fi
+
 rm -rf "${workDir}/${Taxa}"
 rm -f "${BAMpath}/${Taxa}.discordants.bam"
 rm -f "${BAMpath}/${Taxa}.discordants.bam.bai"
@@ -78,3 +102,4 @@ rm -f "${BAMpath}/${Taxa}.splitters.bam"
 rm -f "${BAMpath}/${Taxa}.splitters.bam.bai"
 rm -f "${workDir}/${Taxa}_"*
 
+conda deactivate
