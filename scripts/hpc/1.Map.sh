@@ -8,7 +8,7 @@
 #SBATCH --partition=okeanos
 #SBATCH --error=logs/alignment/temp.%A_%a.err
 #SBATCH --output=logs/alignment/temp.%A_%a.out
-#SBATCH --array=1-76
+#SBATCH --array=1-2
 
 module load common/anaconda/3.8
 conda activate geno
