@@ -87,7 +87,8 @@ fastp \
   -T "${workDir}/${Taxa}" \
   "$geno" \
   "${workDir}/${Taxa}_1.fastq.gz" \
-  "${workDir}/${Taxa}_2.fastq.gz"
+  "${workDir}/${Taxa}_2.fastq.gz" \ 
+  -v
 
 if [[ ! -f "${BAMpath}/${Taxa}.bam" ]]; then
   echo "speedseq finished but no BAM was created: ${BAMpath}/${Taxa}.bam" >&2
