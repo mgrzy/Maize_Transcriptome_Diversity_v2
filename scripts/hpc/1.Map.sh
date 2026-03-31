@@ -30,6 +30,10 @@ geno="$project_root/../SNPcall/genome/maizeV5.fa.gz"
 workDir="$project_root/workdir"
 mapFile="$project_root/data/raw/meta/SrrToGeno/Temp.txt"
 speedseqBin="$project_root/../soft/speedseq/bin/speedseq"
+speedseqDir=$(dirname "$speedseqBin")
+bwaBin="$speedseqDir/bwa"
+samblasterBin="$speedseqDir/samblaster"
+sambambaBin="$speedseqDir/sambamba"
 
 mkdir -p "$BAMpath" "$repoPath" "$workDir" "$project_root/logs/alignment"
 cd "$project_root"
@@ -41,6 +45,21 @@ fi
 
 if [[ ! -x "$speedseqBin" ]]; then
   echo "speedseq executable not found: $speedseqBin" >&2
+  exit 1
+fi
+
+if [[ ! -x "$bwaBin" ]]; then
+  echo "bwa executable not found: $bwaBin" >&2
+  exit 1
+fi
+
+if [[ ! -x "$samblasterBin" ]]; then
+  echo "samblaster executable not found: $samblasterBin" >&2
+  exit 1
+fi
+
+if [[ ! -x "$sambambaBin" ]]; then
+  echo "sambamba executable not found: $sambambaBin" >&2
   exit 1
 fi
 
@@ -84,18 +103,45 @@ fastp \
   -h "${repoPath}/${Taxa}.html" \
   -j "${repoPath}/${Taxa}.json"
 
-"$speedseqBin" align \
-  -o "${BAMpath}/${Taxa}" \
-  -R "$(printf '@RG\tID:%s\tSM:%s\tLB:libX\tPL:ILLUMINA\tPU:unitX' "$Taxa" "$Taxa")" \
-  -t 12 \
-  -T "${workDir}/${Taxa}" \
-  "$geno" \
-  "${workDir}/${Taxa}_1.fastq.gz" \
-  "${workDir}/${Taxa}_2.fastq.gz" \ 
-  -v
+sampleTmpDir="${workDir}/${Taxa}"
+fullTmpDir="${sampleTmpDir}/full"
+splTmpDir="${sampleTmpDir}/spl"
+discTmpDir="${sampleTmpDir}/disc"
+splPipe="${sampleTmpDir}/spl_pipe"
+discPipe="${sampleTmpDir}/disc_pipe"
+rgString=$(printf '@RG\tID:%s\tSM:%s\tLB:libX\tPL:ILLUMINA\tPU:unitX' "$Taxa" "$Taxa")
+
+mkdir -p "$fullTmpDir" "$splTmpDir" "$discTmpDir"
+rm -f "$splPipe" "$discPipe"
+mkfifo "$splPipe" "$discPipe"
+
+gawk '{ if ($0~"^@") { print; next } else { $10="*"; $11="*"; print } }' OFS="\t" "$splPipe" \
+  | "$sambambaBin" view -S -f bam -l 0 /dev/stdin \
+  | "$sambambaBin" sort -t 4 -m 1G --tmpdir="$splTmpDir" -o "${BAMpath}/${Taxa}.splitters.bam" /dev/stdin &
+spl_pid=$!
+
+gawk '{ if ($0~"^@") { print; next } else { $10="*"; $11="*"; print } }' OFS="\t" "$discPipe" \
+  | "$sambambaBin" view -S -f bam -l 0 /dev/stdin \
+  | "$sambambaBin" sort -t 4 -m 1G --tmpdir="$discTmpDir" -o "${BAMpath}/${Taxa}.discordants.bam" /dev/stdin &
+disc_pid=$!
+
+"$bwaBin" mem -t 12 -R "$rgString" "$geno" "${workDir}/${Taxa}_1.fastq.gz" "${workDir}/${Taxa}_2.fastq.gz" \
+  | "$samblasterBin" --excludeDups --addMateTags --maxSplitCount 2 --minNonOverlap 20 \
+      --splitterFile "$splPipe" --discordantFile "$discPipe" \
+  | "$sambambaBin" view -S -f bam -l 0 /dev/stdin \
+  | "$sambambaBin" sort -t 12 -m 18G --tmpdir="$fullTmpDir" -o "${BAMpath}/${Taxa}.bam" /dev/stdin
+
+wait "$spl_pid"
+wait "$disc_pid"
+
+rm -f "$splPipe" "$discPipe"
+
+"$sambambaBin" index "${BAMpath}/${Taxa}.bam"
+"$sambambaBin" index "${BAMpath}/${Taxa}.discordants.bam"
+"$sambambaBin" index "${BAMpath}/${Taxa}.splitters.bam"
 
 if [[ ! -f "${BAMpath}/${Taxa}.bam" ]]; then
-  echo "speedseq finished but no BAM was created: ${BAMpath}/${Taxa}.bam" >&2
+  echo "Alignment finished but no BAM was created: ${BAMpath}/${Taxa}.bam" >&2
   conda deactivate
   exit 1
 fi
