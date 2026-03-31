@@ -15,8 +15,12 @@ conda activate geno
 
 set -euo pipefail
 
-script_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-project_root=$(cd "$script_dir/../.." && pwd)
+submit_dir="${SLURM_SUBMIT_DIR:-$PWD}"
+project_root=$(cd "$submit_dir" && pwd)
+
+if [[ ! -f "$project_root/data/raw/meta/SrrToGeno/Temp.txt" && -f "$project_root/../../data/raw/meta/SrrToGeno/Temp.txt" ]]; then
+  project_root=$(cd "$project_root/../.." && pwd)
+fi
 
 # Paths
 fastqPath="$project_root/data/raw/fastq/temp"
