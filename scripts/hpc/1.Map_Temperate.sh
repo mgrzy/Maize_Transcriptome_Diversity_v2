@@ -26,11 +26,37 @@ repoPath="results/full/fastp"
 # Reference genome
 geno="../SNPcall/genome/maizeV5.fa.gz"
 speedseq_bin="../soft/speedseq/bin/speedseq"
+speedseq_dir=$(dirname "$speedseq_bin")
+bwa_bin="${speedseq_dir}/bwa"
+samblaster_bin="${speedseq_dir}/samblaster"
+sambamba_bin="${speedseq_dir}/sambamba"
 
 # Work directory
 workDir="workdir"
 
 mkdir -p "$BAMpath" "$repoPath" "$workDir"
+
+resolve_executable() {
+  local candidate="$1"
+  local fallback="$2"
+
+  if [[ -x "$candidate" ]]; then
+    printf '%s\n' "$candidate"
+    return 0
+  fi
+
+  if command -v "$fallback" >/dev/null 2>&1; then
+    command -v "$fallback"
+    return 0
+  fi
+
+  echo "Required executable not found: $candidate (or $fallback on PATH)" >&2
+  return 1
+}
+
+bwa_bin=$(resolve_executable "$bwa_bin" bwa)
+samblaster_bin=$(resolve_executable "$samblaster_bin" samblaster)
+sambamba_bin=$(resolve_executable "$sambamba_bin" sambamba)
 
 wait_for_stable_outputs() {
   local sample_name="$1"
@@ -69,6 +95,65 @@ wait_for_stable_outputs() {
   return 1
 }
 
+run_alignment_pipeline() {
+  local read_group="$1"
+  local sample_work_dir="$2"
+  local bam_file="$3"
+  local splitter_bam="$4"
+  local discordant_bam="$5"
+  local trimmed_r1="$6"
+  local trimmed_r2="$7"
+
+  local full_tmp_dir="$sample_work_dir/full"
+  local split_tmp_dir="$sample_work_dir/spl"
+  local disc_tmp_dir="$sample_work_dir/disc"
+  local splitter_pipe="$sample_work_dir/spl_pipe"
+  local discordant_pipe="$sample_work_dir/disc_pipe"
+  local split_pid
+  local disc_pid
+  local status=0
+
+  mkdir -p "$full_tmp_dir" "$split_tmp_dir" "$disc_tmp_dir"
+  rm -f "$splitter_pipe" "$discordant_pipe"
+  mkfifo "$splitter_pipe" "$discordant_pipe"
+
+  awk '{ if ($0 ~ "^@") { print; next } else { $10="*"; $11="*"; print } }' OFS="\t" "$splitter_pipe" \
+    | "$sambamba_bin" view -S -f bam -l 0 /dev/stdin \
+    | "$sambamba_bin" sort -t 4 -m 1G --tmpdir="$split_tmp_dir" -o "$splitter_bam" /dev/stdin &
+  split_pid=$!
+
+  awk '{ if ($0 ~ "^@") { print; next } else { $10="*"; $11="*"; print } }' OFS="\t" "$discordant_pipe" \
+    | "$sambamba_bin" view -S -f bam -l 0 /dev/stdin \
+    | "$sambamba_bin" sort -t 4 -m 1G --tmpdir="$disc_tmp_dir" -o "$discordant_bam" /dev/stdin &
+  disc_pid=$!
+
+  if ! "$bwa_bin" mem -t 12 -R "$read_group" "$geno" "$trimmed_r1" "$trimmed_r2" \
+    | "$samblaster_bin" --excludeDups --addMateTags --maxSplitCount 2 --minNonOverlap 20 \
+        --splitterFile "$splitter_pipe" --discordantFile "$discordant_pipe" \
+    | "$sambamba_bin" view -S -f bam -l 0 /dev/stdin \
+    | "$sambamba_bin" sort -t 12 -m 18G --tmpdir="$full_tmp_dir" -o "$bam_file" /dev/stdin; then
+    status=1
+  fi
+
+  if ! wait "$split_pid"; then
+    status=1
+  fi
+
+  if ! wait "$disc_pid"; then
+    status=1
+  fi
+
+  rm -f "$splitter_pipe" "$discordant_pipe"
+
+  if (( status != 0 )); then
+    return "$status"
+  fi
+
+  "$sambamba_bin" index "$bam_file"
+  "$sambamba_bin" index "$discordant_bam"
+  "$sambamba_bin" index "$splitter_bam"
+}
+
 # Build sample list from mapping file
 if [[ ! -f "$mapFile" ]]; then
   echo "Mapping file not found: $mapFile" >&2
@@ -82,11 +167,6 @@ fi
 
 if [[ ! -f "$geno" ]]; then
   echo "Reference genome not found: $geno" >&2
-  exit 1
-fi
-
-if [[ ! -x "$speedseq_bin" ]]; then
-  echo "speedseq executable not found or not executable: $speedseq_bin" >&2
   exit 1
 fi
 
@@ -178,13 +258,13 @@ for ((i=start_idx; i<end_idx; i++)); do
     continue
   fi
 
-  echo "Aligning with speedseq for $name"
-  "$speedseq_bin" align \
-    -o "$bam_prefix" \
-    -R "$read_group" \
-    -t 12 \
-    -T "$sample_work_dir" \
-    "$geno" \
+  echo "Aligning for $name"
+  run_alignment_pipeline \
+    "$read_group" \
+    "$sample_work_dir" \
+    "$bam_file" \
+    "$splitter_bam" \
+    "$discordant_bam" \
     "$trimmed_r1" \
     "$trimmed_r2"
 
