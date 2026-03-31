@@ -51,16 +51,16 @@ fi
 
 echo "Processing sample $line_no of $total_samples: $Taxa ($samp)"
 
-fastp \
-  -i "${fastqPath}/${samp}_1.fastq.gz" \
-  -I "${fastqPath}/${samp}_2.fastq.gz" \
-  -o "${workDir}/${Taxa}_1.fastq.gz" \
-  -O "${workDir}/${Taxa}_2.fastq.gz" \
-  -w 12 \
-  -h "${repoPath}/${Taxa}.html" \
-  -j "${repoPath}/${Taxa}.json"
+#fastp \
+#  -i "${fastqPath}/${samp}_1.fastq.gz" \
+#  -I "${fastqPath}/${samp}_2.fastq.gz" \
+#  -o "${workDir}/${Taxa}_1.fastq.gz" \
+#  -O "${workDir}/${Taxa}_2.fastq.gz" \
+#  -w 12 \
+#  -h "${repoPath}/${Taxa}.html" \
+#  -j "${repoPath}/${Taxa}.json"
   
-conda deactivate geno
+conda deactivate
 
 "$speedseqBin" align \
   -o "${BAMpath}/${Taxa}" \
