@@ -13,7 +13,7 @@
 
 set -euo pipefail
 
-FASTQ_LIST="data/raw/meta/fastq_links/Temperate.txt"
+FASTQ_LIST="data/raw/meta/fastq_links/T2.txt"
 OUT_DIR="data/raw/fastq/temp"
 TASK_ID="${SLURM_ARRAY_TASK_ID:-1}"
 TASK_COUNT="${SLURM_ARRAY_TASK_COUNT:-10}"
