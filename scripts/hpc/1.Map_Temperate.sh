@@ -75,6 +75,10 @@ for ((i=start_idx; i<end_idx; i++)); do
   srr="${srr_list[$i]}"
   r1="$fastqPath/${srr}_1.fastq.gz"
   r2="$fastqPath/${srr}_2.fastq.gz"
+  sample_work_dir="$workDir/${name}"
+  trimmed_r1="$sample_work_dir/${srr}_1.fastq.gz"
+  trimmed_r2="$sample_work_dir/${srr}_2.fastq.gz"
+  read_group=$(printf '@RG\tID:%s\tSM:%s\tLB:libX\tPL:ILLUMINA\tPU:unitX' "$name" "$name")
 
   if [[ ! -f "$r1" ]]; then
     echo "R1 missing for $name (SRR=$srr): $r1 not found, skipping" >&2
@@ -86,27 +90,32 @@ for ((i=start_idx; i<end_idx; i++)); do
   fi
 
   echo "Running fastp for $name (SRR=$srr)"
+  mkdir -p "$sample_work_dir"
   fastp \
     -i "$r1" -I "$r2" \
-    -o "$workDir/${name}_1.fastq.gz" -O "$workDir/${name}_2.fastq.gz" \
+    -o "$trimmed_r1" -O "$trimmed_r2" \
     -w 12 -h "$repoPath/${name}.html" -j "$repoPath/${name}.json"
 
+  if [[ ! -f "$trimmed_r1" || ! -f "$trimmed_r2" ]]; then
+    echo "fastp did not produce expected outputs for $name (SRR=$srr)" >&2
+    rm -rf "$sample_work_dir"
+    continue
+  fi
+
   echo "Aligning with speedseq for $name"
-  mkdir -p "$workDir/${name}"
   ../soft/speedseq/bin/speedseq align \
     -o "$BAMpath/${name}" \
-    -R $(echo -e "@RG\tID:${name}\tSM:${name}\tLB:libX\tPL:ILLUMINA\tPU=unitX") \
+    -R "$read_group" \
     -t 12 \
-    -T "$workDir/${name}" \
+    -T "$sample_work_dir" \
     "$geno" \
-    "$workDir/${name}_1.fastq.gz" \
-    "$workDir/${name}_2.fastq.gz"
+    "$trimmed_r1" \
+    "$trimmed_r2"
 
   # Cleanup intermediates and extra outputs we don't keep
-  rm -rf "$workDir/${name}"
+  rm -rf "$sample_work_dir"
   rm -f "$BAMpath/${name}.discordants.bam" "$BAMpath/${name}.discordants.bam.bai"
   rm -f "$BAMpath/${name}.splitters.bam" "$BAMpath/${name}.splitters.bam.bai"
-  rm -f "$workDir/${name}_1.fastq.gz" "$workDir/${name}_2.fastq.gz"
 done
 
 conda deactivate
