@@ -8,7 +8,7 @@
 #SBATCH --partition=okeanos
 #SBATCH --error=logs/alignment/temp.%A_%a.err
 #SBATCH --output=logs/alignment/temp.%A_%a.out
-#SBATCH --array=1-2
+#SBATCH --array=1-26
 
 module load common/anaconda/3.8
 conda activate geno
@@ -69,88 +69,99 @@ if [[ ! -f "$geno" ]]; then
 fi
 
 total_samples=$(awk 'NF > 0' "$mapFile" | wc -l)
+samples_per_job=3
 
-if [[ ${SLURM_ARRAY_TASK_ID:-1} -gt $total_samples ]]; then
+start_line=$(( (${SLURM_ARRAY_TASK_ID:-1} - 1) * samples_per_job + 1 ))
+end_line=$(( start_line + samples_per_job - 1 ))
+
+if [[ $start_line -gt $total_samples ]]; then
   echo "No samples assigned to task $SLURM_ARRAY_TASK_ID"
   conda deactivate
   exit 0
 fi
 
-line_no=${SLURM_ARRAY_TASK_ID:-1}
-samp=$(sed -n "${line_no}p" "$mapFile" | awk '{print $2}')
-Taxa=$(sed -n "${line_no}p" "$mapFile" | awk '{print $1}')
-
-if [[ -z "$samp" || -z "$Taxa" ]]; then
-  echo "Malformed line $line_no in $mapFile" >&2
-  conda deactivate
-  exit 1
+if [[ $end_line -gt $total_samples ]]; then
+  end_line=$total_samples
 fi
 
-echo "Processing sample $line_no of $total_samples: $Taxa ($samp)"
+echo "Processing samples $start_line to $end_line of $total_samples"
 
-if [[ ! -f "${fastqPath}/${samp}_1.fastq.gz" || ! -f "${fastqPath}/${samp}_2.fastq.gz" ]]; then
-  echo "FASTQ files missing for $Taxa ($samp) in $fastqPath" >&2
-  conda deactivate
-  exit 1
-fi
+for line_no in $(seq "$start_line" "$end_line"); do
+  samp=$(sed -n "${line_no}p" "$mapFile" | awk '{print $2}')
+  Taxa=$(sed -n "${line_no}p" "$mapFile" | awk '{print $1}')
 
-fastp \
-  -i "${fastqPath}/${samp}_1.fastq.gz" \
-  -I "${fastqPath}/${samp}_2.fastq.gz" \
-  -o "${workDir}/${Taxa}_1.fastq.gz" \
-  -O "${workDir}/${Taxa}_2.fastq.gz" \
-  -w 12 \
-  -h "${repoPath}/${Taxa}.html" \
-  -j "${repoPath}/${Taxa}.json"
+  if [[ -z "$samp" || -z "$Taxa" ]]; then
+    echo "Malformed line $line_no in $mapFile" >&2
+    conda deactivate
+    exit 1
+  fi
 
-sampleTmpDir="${workDir}/${Taxa}"
-fullTmpDir="${sampleTmpDir}/full"
-splTmpDir="${sampleTmpDir}/spl"
-discTmpDir="${sampleTmpDir}/disc"
-splPipe="${sampleTmpDir}/spl_pipe"
-discPipe="${sampleTmpDir}/disc_pipe"
-rgString=$(printf '@RG\tID:%s\tSM:%s\tLB:libX\tPL:ILLUMINA\tPU:unitX' "$Taxa" "$Taxa")
+  echo "Processing sample $line_no of $total_samples: $Taxa ($samp)"
 
-mkdir -p "$fullTmpDir" "$splTmpDir" "$discTmpDir"
-rm -f "$splPipe" "$discPipe"
-mkfifo "$splPipe" "$discPipe"
+  if [[ ! -f "${fastqPath}/${samp}_1.fastq.gz" || ! -f "${fastqPath}/${samp}_2.fastq.gz" ]]; then
+    echo "FASTQ files missing for $Taxa ($samp) in $fastqPath" >&2
+    conda deactivate
+    exit 1
+  fi
 
-gawk '{ if ($0~"^@") { print; next } else { $10="*"; $11="*"; print } }' OFS="\t" "$splPipe" \
-  | "$sambambaBin" view -S -f bam -l 0 /dev/stdin \
-  | "$sambambaBin" sort -t 4 -m 1G --tmpdir="$splTmpDir" -o "${BAMpath}/${Taxa}.splitters.bam" /dev/stdin &
-spl_pid=$!
+  fastp \
+    -i "${fastqPath}/${samp}_1.fastq.gz" \
+    -I "${fastqPath}/${samp}_2.fastq.gz" \
+    -o "${workDir}/${Taxa}_1.fastq.gz" \
+    -O "${workDir}/${Taxa}_2.fastq.gz" \
+    -w 12 \
+    -h "${repoPath}/${Taxa}.html" \
+    -j "${repoPath}/${Taxa}.json"
 
-gawk '{ if ($0~"^@") { print; next } else { $10="*"; $11="*"; print } }' OFS="\t" "$discPipe" \
-  | "$sambambaBin" view -S -f bam -l 0 /dev/stdin \
-  | "$sambambaBin" sort -t 4 -m 1G --tmpdir="$discTmpDir" -o "${BAMpath}/${Taxa}.discordants.bam" /dev/stdin &
-disc_pid=$!
+  sampleTmpDir="${workDir}/${Taxa}"
+  fullTmpDir="${sampleTmpDir}/full"
+  splTmpDir="${sampleTmpDir}/spl"
+  discTmpDir="${sampleTmpDir}/disc"
+  splPipe="${sampleTmpDir}/spl_pipe"
+  discPipe="${sampleTmpDir}/disc_pipe"
+  rgString=$(printf '@RG\tID:%s\tSM:%s\tLB:libX\tPL:ILLUMINA\tPU:unitX' "$Taxa" "$Taxa")
 
-"$bwaBin" mem -t 12 -R "$rgString" "$geno" "${workDir}/${Taxa}_1.fastq.gz" "${workDir}/${Taxa}_2.fastq.gz" \
-  | "$samblasterBin" --excludeDups --addMateTags --maxSplitCount 2 --minNonOverlap 20 \
-      --splitterFile "$splPipe" --discordantFile "$discPipe" \
-  | "$sambambaBin" view -S -f bam -l 0 /dev/stdin \
-  | "$sambambaBin" sort -t 12 -m 18G --tmpdir="$fullTmpDir" -o "${BAMpath}/${Taxa}.bam" /dev/stdin
+  mkdir -p "$fullTmpDir" "$splTmpDir" "$discTmpDir"
+  rm -f "$splPipe" "$discPipe"
+  mkfifo "$splPipe" "$discPipe"
 
-wait "$spl_pid"
-wait "$disc_pid"
+  gawk '{ if ($0~"^@") { print; next } else { $10="*"; $11="*"; print } }' OFS="\t" "$splPipe" \
+    | "$sambambaBin" view -S -f bam -l 0 /dev/stdin \
+    | "$sambambaBin" sort -t 4 -m 1G --tmpdir="$splTmpDir" -o "${BAMpath}/${Taxa}.splitters.bam" /dev/stdin &
+  spl_pid=$!
 
-rm -f "$splPipe" "$discPipe"
+  gawk '{ if ($0~"^@") { print; next } else { $10="*"; $11="*"; print } }' OFS="\t" "$discPipe" \
+    | "$sambambaBin" view -S -f bam -l 0 /dev/stdin \
+    | "$sambambaBin" sort -t 4 -m 1G --tmpdir="$discTmpDir" -o "${BAMpath}/${Taxa}.discordants.bam" /dev/stdin &
+  disc_pid=$!
 
-"$sambambaBin" index "${BAMpath}/${Taxa}.bam"
-"$sambambaBin" index "${BAMpath}/${Taxa}.discordants.bam"
-"$sambambaBin" index "${BAMpath}/${Taxa}.splitters.bam"
+  "$bwaBin" mem -t 12 -R "$rgString" "$geno" "${workDir}/${Taxa}_1.fastq.gz" "${workDir}/${Taxa}_2.fastq.gz" \
+    | "$samblasterBin" --excludeDups --addMateTags --maxSplitCount 2 --minNonOverlap 20 \
+        --splitterFile "$splPipe" --discordantFile "$discPipe" \
+    | "$sambambaBin" view -S -f bam -l 0 /dev/stdin \
+    | "$sambambaBin" sort -t 12 -m 18G --tmpdir="$fullTmpDir" -o "${BAMpath}/${Taxa}.bam" /dev/stdin
 
-if [[ ! -f "${BAMpath}/${Taxa}.bam" ]]; then
-  echo "Alignment finished but no BAM was created: ${BAMpath}/${Taxa}.bam" >&2
-  conda deactivate
-  exit 1
-fi
+  wait "$spl_pid"
+  wait "$disc_pid"
 
-rm -rf "${workDir}/${Taxa}"
-rm -f "${BAMpath}/${Taxa}.discordants.bam"
-rm -f "${BAMpath}/${Taxa}.discordants.bam.bai"
-rm -f "${BAMpath}/${Taxa}.splitters.bam"
-rm -f "${BAMpath}/${Taxa}.splitters.bam.bai"
-rm -f "${workDir}/${Taxa}_"*
+  rm -f "$splPipe" "$discPipe"
+
+  "$sambambaBin" index "${BAMpath}/${Taxa}.bam"
+  "$sambambaBin" index "${BAMpath}/${Taxa}.discordants.bam"
+  "$sambambaBin" index "${BAMpath}/${Taxa}.splitters.bam"
+
+  if [[ ! -f "${BAMpath}/${Taxa}.bam" ]]; then
+    echo "Alignment finished but no BAM was created: ${BAMpath}/${Taxa}.bam" >&2
+    conda deactivate
+    exit 1
+  fi
+
+  rm -rf "${workDir}/${Taxa}"
+  rm -f "${BAMpath}/${Taxa}.discordants.bam"
+  rm -f "${BAMpath}/${Taxa}.discordants.bam.bai"
+  rm -f "${BAMpath}/${Taxa}.splitters.bam"
+  rm -f "${BAMpath}/${Taxa}.splitters.bam.bai"
+  rm -f "${workDir}/${Taxa}_"*
+done
 
 conda deactivate
