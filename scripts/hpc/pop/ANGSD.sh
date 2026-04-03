@@ -15,8 +15,29 @@ conda activate geno
 
 set -euo pipefail
 
-SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../../.." && pwd)
+SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || true)
+
+find_project_root() {
+  local base level candidate
+
+  for base in "${SLURM_SUBMIT_DIR:-}" "${PWD}" "${SCRIPT_DIR}"; do
+    [[ -z "${base}" ]] && continue
+    base=$(cd "${base}" 2>/dev/null && pwd) || continue
+
+    for level in . .. ../.. ../../.. ../../../..; do
+      candidate=$(cd "${base}/${level}" 2>/dev/null && pwd) || continue
+      if [[ -d "${candidate}/data" && -d "${candidate}/scripts" ]]; then
+        printf '%s\n' "${candidate}"
+        return 0
+      fi
+    done
+  done
+
+  echo "Unable to determine project root from SLURM_SUBMIT_DIR, PWD, or script location" >&2
+  exit 1
+}
+
+PROJECT_ROOT=$(find_project_root)
 
 ANGSD_ROOT="${PROJECT_ROOT}/../soft/angsd"
 ANGSD="${ANGSD_ROOT}/angsd"
