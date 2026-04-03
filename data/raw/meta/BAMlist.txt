@@ -1,0 +1,2 @@
+results/full/WGS/BAM/B107.bam
+results/full/WGS/BAM/B109.bam
