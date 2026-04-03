@@ -1,34 +1,51 @@
-#!/usr/bin/env bash
+#!/bin/bash -l
+#SBATCH --job-name=angsd
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=50G
+#SBATCH --time=48:00:00
+#SBATCH --account=g102-2488
+#SBATCH --partition=okeanos
+#SBATCH --error=logs/angsd/pi%x.%j.err
+#SBATCH --output=logs/angsd/pi%x.%j.out
+
+module load common/anaconda/3.8
+conda activate geno
 
 set -euo pipefail
 
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
 PROJECT_ROOT=$(cd "${SCRIPT_DIR}/../../.." && pwd)
 
-ANGSD_ROOT="${HOME}/soft/angsd"
+ANGSD_ROOT="${PROJECT_ROOT}/../soft/angsd"
 ANGSD="${ANGSD_ROOT}/angsd"
 REALSFS="${ANGSD_ROOT}/misc/realSFS"
 THETASTAT="${ANGSD_ROOT}/misc/thetaStat"
-BEDTOOLS_DEFAULT="${HOME}/anaconda3/envs/geno/bin/bedtools"
-BEDTOOLS="${BEDTOOLS:-}"
+BEDTOOLS="${BEDTOOLS:-$(command -v bedtools || true)}"
+GENOME="${PROJECT_ROOT}/../SNPcall/genome/maizeV5.fa.gz"
+REGION_DIR="${PROJECT_ROOT}/data/processed/bed_windows"
+OUTBASE="${PROJECT_ROOT}/results/full/pop/angsd"
 
-if [[ -z "${BEDTOOLS}" ]]; then
-  if [[ -x "${BEDTOOLS_DEFAULT}" ]]; then
-    BEDTOOLS="${BEDTOOLS_DEFAULT}"
+THREADS_DEFAULT="${SLURM_CPUS_PER_TASK:-12}"
+THREADS_ANGSD="${THREADS_ANGSD:-${THREADS_DEFAULT}}"
+THREADS_SFS="${THREADS_SFS:-${THREADS_DEFAULT}}"
+THREADS_THETA="${THREADS_THETA:-${THREADS_DEFAULT}}"
+
+usage() {
+  echo "Usage: $(basename "$0") <bamlist>" >&2
+  echo "Example: $(basename "$0") data/raw/meta/Tropical_BAM.txt" >&2
+}
+
+resolve_path() {
+  local path="$1"
+
+  if [[ "${path}" = /* ]]; then
+    printf '%s\n' "${path}"
   else
-    BEDTOOLS="$(command -v bedtools || true)"
+    printf '%s\n' "${PROJECT_ROOT}/${path}"
   fi
-fi
-
-BAMLIST="data/raw/meta/BAMlist.txt"
-ANCESTRAL_FASTA="${HOME}/R/Opus25/Maize_Cold_Spring/data/raw/genome/maizeV5.fa"
-REGION_DIR="${PROJECT_ROOT}/results/summary/bed_windows"
-OUTDIR="${PROJECT_ROOT}/results/full/pop/angsd"
-
-THREADS_ANGSD="${THREADS_ANGSD:-8}"
-THREADS_SFS="${THREADS_SFS:-32}"
-THREADS_THETA="${THREADS_THETA:-24}"
-TEST_REGION="${TEST_REGION:-chr9}"
+}
 
 require_file() {
   local path="$1"
@@ -70,9 +87,7 @@ any_dependency_newer() {
 chrom_stream() {
   local bed_file="$1"
 
-  awk -v test_region="${TEST_REGION}" '
-    !seen[$1]++ && (test_region == "" || $1 == test_region) { print $1 }
-  ' "${bed_file}"
+  awk '!seen[$1]++ { print $1 }' "${bed_file}"
 }
 
 index_sites_file() {
@@ -95,12 +110,11 @@ make_union_bed() {
   local region_files=( "$@" )
   local tmp_bed
 
-  tmp_bed=$(mktemp "${OUTDIR}/all_region_sets.merged.XXXXXX.bed")
+  tmp_bed=$(mktemp "${OUTDIR}/${POP_NAME}.all_region_sets.merged.XXXXXX.bed")
 
   cat "${region_files[@]}" \
     | "${BEDTOOLS}" sort -i - \
-    | "${BEDTOOLS}" merge -i - \
-    | awk -v test_region="${TEST_REGION}" 'test_region == "" || $1 == test_region' > "${tmp_bed}"
+    | "${BEDTOOLS}" merge -i - > "${tmp_bed}"
 
   if [[ -f "${merged_bed}" ]] && cmp -s "${tmp_bed}" "${merged_bed}"; then
     rm -f "${tmp_bed}"
@@ -116,7 +130,6 @@ run_union_pipeline() {
   local union_bed="$1"
   local union_prefix="$2"
   local union_sfs_file union_saf_idx union_saf_gz union_saf_pos union_thetas_idx union_thetas_gz
-  local angsd_region_args=()
 
   union_sfs_file="${union_prefix}.sfs"
   union_saf_idx="${union_prefix}.saf.idx"
@@ -127,20 +140,16 @@ run_union_pipeline() {
 
   if ! any_dependency_newer \
     "${union_thetas_idx}" \
-    "${union_bed}" "${union_bed}.idx" "${union_bed}.bin" "${BAMLIST}" "${ANCESTRAL_FASTA}" \
+    "${union_bed}" "${union_bed}.idx" "${union_bed}.bin" "${BAMLIST}" "${GENOME}" \
     && [[ -s "${union_saf_idx}" && -s "${union_saf_gz}" && -s "${union_saf_pos}" && -s "${union_sfs_file}" && -s "${union_thetas_gz}" ]]; then
     echo "Reusing union ANGSD outputs: ${union_prefix}"
     return
   fi
 
-  echo "Running ANGSD pipeline for merged region union"
+  echo "Running ANGSD pipeline for ${POP_NAME}"
 
-  if [[ -n "${TEST_REGION}" ]]; then
-    angsd_region_args=( -r "${TEST_REGION}" )
-  fi
-
-  "${ANGSD}" -bam "${BAMLIST}" "${angsd_region_args[@]}" -sites "${union_bed}" -doSaf 1 \
-    -anc "${ANCESTRAL_FASTA}" -GL 1 -P "${THREADS_ANGSD}" -out "${union_prefix}"
+  "${ANGSD}" -bam "${BAMLIST}" -sites "${union_bed}" -doSaf 1 \
+    -anc "${GENOME}" -GL 1 -P "${THREADS_ANGSD}" -out "${union_prefix}"
 
   "${REALSFS}" "${union_prefix}.saf.idx" -P "${THREADS_SFS}" -fold 1 > "${union_sfs_file}"
   "${REALSFS}" saf2theta "${union_prefix}.saf.idx" -outname "${union_prefix}" -P "${THREADS_THETA}" -fold 1 -sfs "${union_sfs_file}"
@@ -251,14 +260,35 @@ split_region_set_output() {
   echo "Wrote ${region_out}"
 }
 
+if [[ $# -ne 1 ]]; then
+  usage
+  exit 1
+fi
+
+BAMLIST=$(resolve_path "$1")
+POP_NAME=$(basename "${BAMLIST}")
+POP_NAME="${POP_NAME%.*}"
+POP_NAME="${POP_NAME%_BAM}"
+OUTDIR="${OUTBASE}/${POP_NAME}"
+
+if [[ -z "${POP_NAME}" ]]; then
+  echo "Failed to derive population name from BAM list: ${BAMLIST}" >&2
+  exit 1
+fi
+
 require_exec "${ANGSD}"
 require_exec "${REALSFS}"
 require_exec "${THETASTAT}"
-require_exec "${BEDTOOLS}"
-require_file "${BAMLIST}"
-require_file "${ANCESTRAL_FASTA}"
 
-mkdir -p "${OUTDIR}"
+if [[ -z "${BEDTOOLS}" ]]; then
+  echo "Required executable not found on PATH: bedtools" >&2
+  exit 1
+fi
+
+require_file "${BAMLIST}"
+require_file "${GENOME}"
+
+mkdir -p "${PROJECT_ROOT}/logs/angsd" "${OUTDIR}"
 
 shopt -s nullglob
 region_files=( "${REGION_DIR}"/*.bed )
@@ -273,14 +303,15 @@ for bed_file in "${region_files[@]}"; do
   require_file "${bed_file}"
 done
 
-UNION_BED="${OUTDIR}/all_region_sets.merged.bed"
-UNION_PREFIX="${OUTDIR}/all_region_sets"
+UNION_PREFIX="${OUTDIR}/${POP_NAME}.all_region_sets"
+UNION_BED="${UNION_PREFIX}.merged.bed"
 
 make_union_bed "${UNION_BED}" "${region_files[@]}"
 if [[ ! -s "${UNION_BED}" ]]; then
-  echo "Merged BED is empty after applying TEST_REGION=${TEST_REGION}" >&2
+  echo "Merged BED is empty: ${UNION_BED}" >&2
   exit 1
 fi
+
 index_sites_file "${UNION_BED}"
 run_union_pipeline "${UNION_BED}" "${UNION_PREFIX}"
 run_theta_by_chromosome "${UNION_BED}" "${UNION_PREFIX}"
@@ -288,3 +319,5 @@ run_theta_by_chromosome "${UNION_BED}" "${UNION_PREFIX}"
 for bed_file in "${region_files[@]}"; do
   split_region_set_output "${bed_file}" "${UNION_PREFIX}"
 done
+
+conda deactivate
