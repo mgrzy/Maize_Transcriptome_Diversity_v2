@@ -2,9 +2,9 @@
 #SBATCH --job-name=pi_bed
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
-#SBATCH --cpus-per-task=4
-#SBATCH --mem=16G
-#SBATCH --time=08:00:00
+#SBATCH --cpus-per-task=12
+#SBATCH --mem=50G
+#SBATCH --time=12:00:00
 #SBATCH --account=g102-2488
 #SBATCH --partition=okeanos
 #SBATCH --array=1-6
