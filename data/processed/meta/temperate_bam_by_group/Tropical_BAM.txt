@@ -1,0 +1,2 @@
+results/full/BAM/temperate/F2834T.bam
+results/full/BAM/temperate/NY6371.bam

@@ -1,0 +1,14 @@
+results/full/BAM/temperate/A674.bam
+results/full/BAM/temperate/B75.bam
+results/full/BAM/temperate/B79.bam
+results/full/BAM/temperate/B87.bam
+results/full/BAM/temperate/B88.bam
+results/full/BAM/temperate/H121.bam
+results/full/BAM/temperate/MS225.bam
+results/full/BAM/temperate/NC342.bam
+results/full/BAM/temperate/Oh7.bam
+results/full/BAM/temperate/Os420.bam
+results/full/BAM/temperate/PHZ51.bam
+results/full/BAM/temperate/Pa880.bam
+results/full/BAM/temperate/R226.bam
+results/full/BAM/temperate/SD40.bam

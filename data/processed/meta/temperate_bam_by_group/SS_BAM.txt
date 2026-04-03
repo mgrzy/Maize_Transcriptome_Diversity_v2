@@ -1,0 +1,15 @@
+results/full/BAM/temperate/2FACC.bam
+results/full/BAM/temperate/B109.bam
+results/full/BAM/temperate/B37.bam
+results/full/BAM/temperate/B46.bam
+results/full/BAM/temperate/B73.bam
+results/full/BAM/temperate/CR14.bam
+results/full/BAM/temperate/DJ7.bam
+results/full/BAM/temperate/H114.bam
+results/full/BAM/temperate/LH194.bam
+results/full/BAM/temperate/LH208.bam
+results/full/BAM/temperate/NC250.bam
+results/full/BAM/temperate/NC310.bam
+results/full/BAM/temperate/NS701.bam
+results/full/BAM/temperate/PHT10.bam
+results/full/BAM/temperate/R229.bam

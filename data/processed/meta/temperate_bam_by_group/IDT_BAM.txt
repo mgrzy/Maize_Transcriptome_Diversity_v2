@@ -1,0 +1,14 @@
+results/full/BAM/temperate/29MIBZ2.bam
+results/full/BAM/temperate/911.bam
+results/full/BAM/temperate/B107.bam
+results/full/BAM/temperate/IBB15.bam
+results/full/BAM/temperate/MQ305.bam
+results/full/BAM/temperate/NQ508.bam
+results/full/BAM/temperate/NS501.bam
+results/full/BAM/temperate/PHK74.bam
+results/full/BAM/temperate/PHP76.bam
+results/full/BAM/temperate/PHT22.bam
+results/full/BAM/temperate/PHV57.bam
+results/full/BAM/temperate/PHW53.bam
+results/full/BAM/temperate/PHW86.bam
+results/full/BAM/temperate/SD102.bam

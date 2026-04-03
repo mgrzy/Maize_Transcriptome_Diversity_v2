@@ -2,6 +2,11 @@ suppressPackageStartupMessages({
   library(data.table)
 })
 
+slurm_threads <- suppressWarnings(as.integer(Sys.getenv("SLURM_CPUS_PER_TASK", unset = "1")))
+if (!is.na(slurm_threads) && slurm_threads > 0L) {
+  setDTthreads(slurm_threads)
+}
+
 get_script_path <- function() {
   script_path_arg <- "--file="
   script_path_match <- commandArgs()[grepl(paste0("^", script_path_arg), commandArgs())]
@@ -18,27 +23,102 @@ get_script_path <- function() {
   NA_character_
 }
 
-resolve_project_root <- function() {
+find_project_root <- function() {
   script_path <- get_script_path()
+  base_dirs <- c(
+    Sys.getenv("SLURM_SUBMIT_DIR", unset = NA_character_),
+    getwd(),
+    if (!is.na(script_path)) dirname(script_path) else NA_character_
+  )
 
-  if (!is.na(script_path)) {
-    return(normalizePath(file.path(dirname(script_path), "..", "..", ".."), winslash = "/", mustWork = TRUE))
+  for (base_dir in base_dirs) {
+    if (is.na(base_dir) || !nzchar(base_dir) || !dir.exists(base_dir)) {
+      next
+    }
+
+    candidate <- normalizePath(base_dir, winslash = "/", mustWork = TRUE)
+    for (depth in 0:4) {
+      if (
+        dir.exists(file.path(candidate, "data")) &&
+        dir.exists(file.path(candidate, "scripts"))
+      ) {
+        return(candidate)
+      }
+
+      parent <- dirname(candidate)
+      if (identical(parent, candidate)) {
+        break
+      }
+      candidate <- parent
+    }
   }
 
-  normalizePath(".", winslash = "/", mustWork = TRUE)
+  stop("Unable to determine project root from SLURM_SUBMIT_DIR, getwd(), or script path.")
 }
 
-project_root <- resolve_project_root()
+resolve_path <- function(path, project_root) {
+  if (is.null(path) || is.na(path) || !nzchar(path)) {
+    return(path)
+  }
 
-default_pestpg_dir <- file.path(project_root, "results", "full", "pop", "angsd")
-default_bed_dir <- file.path(project_root, "results", "summary", "bed_windows")
-default_out_dir <- file.path(project_root, "results", "full", "pop", "angsd", "pi_by_interval")
+  if (grepl("^/", path)) {
+    normalizePath(path, winslash = "/", mustWork = FALSE)
+  } else {
+    normalizePath(file.path(project_root, path), winslash = "/", mustWork = FALSE)
+  }
+}
 
-calculate_pi_per_bed_interval_config <- list(
-  pestpg_dir = default_pestpg_dir,
-  bed_dir = default_bed_dir,
-  out_dir = default_out_dir
-)
+project_root <- find_project_root()
+
+default_pestpg_root <- file.path(project_root, "results", "full", "pop", "angsd")
+default_bed_dir <- file.path(project_root, "data", "processed", "bed_windows")
+
+parse_cli_args <- function(args, project_root) {
+  parsed <- list(
+    group = NULL,
+    pestpg_dir = NULL,
+    bed_dir = default_bed_dir,
+    out_dir = NULL,
+    skip_empty_pestpg = TRUE
+  )
+
+  for (arg in args) {
+    if (arg %in% c("-h", "--help")) {
+      cat(
+        "Usage: Rscript scripts/hpc/pop/Calculate_Pi_Per_Bed_Interval.R [--group=NAME] [--pestpg-dir=PATH]",
+        "[--bed-dir=PATH] [--out-dir=PATH] [--keep-empty]\n",
+        sep = " "
+      )
+      quit(save = "no", status = 0)
+    } else if (grepl("^--group=", arg)) {
+      parsed$group <- sub("^--group=", "", arg)
+    } else if (grepl("^--pestpg-dir=", arg)) {
+      parsed$pestpg_dir <- resolve_path(sub("^--pestpg-dir=", "", arg), project_root)
+    } else if (grepl("^--bed-dir=", arg)) {
+      parsed$bed_dir <- resolve_path(sub("^--bed-dir=", "", arg), project_root)
+    } else if (grepl("^--out-dir=", arg)) {
+      parsed$out_dir <- resolve_path(sub("^--out-dir=", "", arg), project_root)
+    } else if (identical(arg, "--keep-empty")) {
+      parsed$skip_empty_pestpg <- FALSE
+    } else {
+      stop("Unknown argument: ", arg)
+    }
+  }
+
+  if (is.null(parsed$pestpg_dir)) {
+    if (!is.null(parsed$group) && nzchar(parsed$group)) {
+      parsed$pestpg_dir <- file.path(default_pestpg_root, parsed$group)
+    } else {
+      parsed$pestpg_dir <- default_pestpg_root
+    }
+  }
+
+  if (is.null(parsed$out_dir)) {
+    parsed$out_dir <- file.path(parsed$pestpg_dir, "pi_by_interval")
+  }
+
+  parsed
+}
 
 find_first_column <- function(dt, candidates) {
   matches <- candidates[candidates %in% names(dt)]
@@ -74,7 +154,6 @@ read_bed_intervals <- function(path) {
   }
 
   bed_dt[is.na(interval_id) | !nzchar(interval_id), interval_id := paste0(chrom, ":", bed_start + 1L, "-", bed_end)]
-
   bed_dt[, interval_bp := bed_end - bed_start]
   bed_dt[, start := bed_start + 1L]
   bed_dt[, end := bed_end]
@@ -179,27 +258,22 @@ calculate_pi_for_pair <- function(bed_path, pestpg_path, out_path = NULL) {
   result_dt[]
 }
 
-calculate_pi_for_matching_files <- function(
-  config = calculate_pi_per_bed_interval_config,
-  skip_empty_pestpg = TRUE
-) {
-  config <- modifyList(calculate_pi_per_bed_interval_config, config)
-
-  if (!dir.exists(config$bed_dir)) {
-    stop("BED directory not found: ", config$bed_dir)
+calculate_pi_for_matching_files <- function(pestpg_dir, bed_dir, out_dir, skip_empty_pestpg = TRUE) {
+  if (!dir.exists(bed_dir)) {
+    stop("BED directory not found: ", bed_dir)
   }
-  if (!dir.exists(config$pestpg_dir)) {
-    stop("pestPG directory not found: ", config$pestpg_dir)
+  if (!dir.exists(pestpg_dir)) {
+    stop("pestPG directory not found: ", pestpg_dir)
   }
 
-  bed_files <- list.files(config$bed_dir, pattern = "\\.bed$", full.names = TRUE)
-  pestpg_files <- list.files(config$pestpg_dir, pattern = "\\.pestPG$", full.names = TRUE)
+  bed_files <- list.files(bed_dir, pattern = "\\.bed$", full.names = TRUE)
+  pestpg_files <- list.files(pestpg_dir, pattern = "\\.pestPG$", full.names = TRUE)
 
   if (!length(bed_files)) {
-    stop("No BED files found in: ", config$bed_dir)
+    stop("No BED files found in: ", bed_dir)
   }
   if (!length(pestpg_files)) {
-    stop("No pestPG files found in: ", config$pestpg_dir)
+    stop("No pestPG files found in: ", pestpg_dir)
   }
 
   bed_map <- setNames(bed_files, sub("\\.bed$", "", basename(bed_files)))
@@ -209,15 +283,15 @@ calculate_pi_for_matching_files <- function(
   if (!length(shared_names)) {
     stop(
       "No matching BED / pestPG basenames found between ",
-      config$bed_dir, " and ", config$pestpg_dir
+      bed_dir, " and ", pestpg_dir
     )
   }
 
-  dir.create(config$out_dir, recursive = TRUE, showWarnings = FALSE)
+  dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
   results <- lapply(shared_names, function(name) {
     pestpg_path <- pestpg_map[[name]]
-    out_path <- file.path(config$out_dir, paste0(name, ".interval_pi.tsv"))
+    out_path <- file.path(out_dir, paste0(name, ".interval_pi.tsv"))
 
     if (skip_empty_pestpg && isTRUE(file.info(pestpg_path)$size == 0)) {
       warning("Skipping empty pestPG file: ", pestpg_path, call. = FALSE, immediate. = TRUE)
@@ -231,28 +305,24 @@ calculate_pi_for_matching_files <- function(
       out_path = out_path
     )
   })
-  names(results) <- shared_names
-  results <- Filter(Negate(is.null), results)
 
-  invisible(results)
+  names(results) <- shared_names
+  Filter(Negate(is.null), results)
 }
 
-run_calculate_pi_per_bed_interval <- function(
-  config = calculate_pi_per_bed_interval_config,
-  skip_empty_pestpg = TRUE,
-  assign_global = interactive()
-) {
-  results <- calculate_pi_for_matching_files(
-    config = config,
-    skip_empty_pestpg = skip_empty_pestpg
-  )
+run_calculate_pi_per_bed_interval <- function(args = commandArgs(trailingOnly = TRUE)) {
+  parsed <- parse_cli_args(args, project_root)
 
-  if (assign_global) {
-    assign("pi_by_interval_results", results, envir = .GlobalEnv)
-    message("Saved results list to pi_by_interval_results")
-  }
+  message("Using pestPG directory: ", parsed$pestpg_dir)
+  message("Using BED directory: ", parsed$bed_dir)
+  message("Writing results to: ", parsed$out_dir)
 
-  invisible(results)
+  invisible(calculate_pi_for_matching_files(
+    pestpg_dir = parsed$pestpg_dir,
+    bed_dir = parsed$bed_dir,
+    out_dir = parsed$out_dir,
+    skip_empty_pestpg = parsed$skip_empty_pestpg
+  ))
 }
 
 should_autorun <- function() {
