@@ -15,6 +15,8 @@ conda activate geno
 
 set -euo pipefail
 
+# Slurm can execute the job from a spool directory, so we cannot rely on the
+# script path alone to locate the repository root.
 SCRIPT_DIR=$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd || true)
 
 find_project_root() {
@@ -39,6 +41,7 @@ find_project_root() {
 
 PROJECT_ROOT=$(find_project_root)
 
+# Core tool and data locations for the ANGSD -> realSFS -> thetaStat workflow.
 ANGSD_ROOT="${PROJECT_ROOT}/../soft/angsd"
 ANGSD="${ANGSD_ROOT}/angsd"
 REALSFS="${ANGSD_ROOT}/misc/realSFS"
@@ -105,6 +108,10 @@ any_dependency_newer() {
   return 1
 }
 
+# A chromosome-level theta file is considered reusable only when it exists,
+# is newer than the shared theta inputs, and matches the new streamed
+# `thetaStat print` format. This prevents reusing partial files from older
+# OOM-failed runs.
 theta_output_is_current() {
   local theta_file="$1"
   local union_prefix="$2"
@@ -124,12 +131,15 @@ theta_output_is_current() {
   return 0
 }
 
+# Emit the chromosome names present in a BED file, preserving first-seen order.
 chrom_stream() {
   local bed_file="$1"
 
   awk '!seen[$1]++ { print $1 }' "${bed_file}"
 }
 
+# ANGSD requires an indexed sites file when `-sites` is used. Rebuild it only
+# if the merged BED changed.
 index_sites_file() {
   local bed_file="$1"
 
@@ -144,6 +154,8 @@ index_sites_file() {
   "${ANGSD}" sites index "${bed_file}"
 }
 
+# Merge all BED region sets into one union BED. ANGSD is run once on the union,
+# then the chromosome-level outputs are split back into the original BED sets.
 make_union_bed() {
   local merged_bed="$1"
   shift
@@ -166,6 +178,11 @@ make_union_bed() {
   echo "Updated merged BED: ${merged_bed}"
 }
 
+# Run the expensive shared steps once per population:
+# 1. `angsd -doSaf` on all sites in the merged BED
+# 2. `realSFS` to estimate the folded SFS
+# 3. `realSFS saf2theta` to generate theta files used downstream
+# These outputs are reused on reruns unless any input changed.
 run_union_pipeline() {
   local union_bed="$1"
   local union_prefix="$2"
@@ -195,6 +212,10 @@ run_union_pipeline() {
   "${REALSFS}" saf2theta "${union_prefix}.saf.idx" -outname "${union_prefix}" -P "${THREADS_THETA}" -fold 1 -sfs "${union_sfs_file}"
 }
 
+# Generate one chromosome-level theta table at a time. This is intentionally
+# serial so reruns can resume from already completed chromosomes. We use
+# `thetaStat print` instead of `do_stat -win 1 -step 1` to avoid OOM on large
+# chromosomes.
 run_theta_by_chromosome() {
   local union_bed="$1"
   local union_prefix="$2"
@@ -213,6 +234,9 @@ run_theta_by_chromosome() {
   done < <(chrom_stream "${union_bed}")
 }
 
+# Check whether a BED-specific split file can be reused. It must be present,
+# newer than the BED and theta inputs, and newer than every chromosome file
+# it depends on.
 split_output_is_current() {
   local region_out="$1"
   local bed_file="$2"
@@ -238,6 +262,9 @@ split_output_is_current() {
   return 0
 }
 
+# Subset chromosome-level theta output back to one original BED file. The AWK
+# block reads BED intervals first, then streams the chromosome theta table and
+# keeps only rows whose positions fall inside those intervals.
 split_region_set_output() {
   local bed_file="$1"
   local union_prefix="$2"
@@ -355,9 +382,15 @@ for bed_file in "${region_files[@]}"; do
   require_file "${bed_file}"
 done
 
+# Shared per-population filenames.
 UNION_PREFIX="${OUTDIR}/${POP_NAME}.all_region_sets"
 UNION_BED="${UNION_PREFIX}.merged.bed"
 
+# Pipeline order:
+# 1. build/reuse merged BED
+# 2. build/reuse ANGSD + SFS + theta intermediates
+# 3. build/reuse chromosome theta tables
+# 4. split those chromosome tables into the original BED region sets
 make_union_bed "${UNION_BED}" "${region_files[@]}"
 if [[ ! -s "${UNION_BED}" ]]; then
   echo "Merged BED is empty: ${UNION_BED}" >&2

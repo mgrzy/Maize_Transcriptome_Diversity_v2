@@ -8,8 +8,8 @@
 #SBATCH --account=g102-2488
 #SBATCH --partition=okeanos
 #SBATCH --array=1-6
-#SBATCH --error=logs/pi_by_interval/%x.%A_%a.err
-#SBATCH --output=logs/pi_by_interval/%x.%A_%a.out
+#SBATCH --error=logs/angsd/pi_by_interval%x.%A_%a.err
+#SBATCH --output=logs/angsd/pi_by_interval%x.%A_%a.out
 
 module load common/anaconda/3.8
 conda activate renv
