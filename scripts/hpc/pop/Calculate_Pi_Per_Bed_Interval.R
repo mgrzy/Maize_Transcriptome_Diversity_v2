@@ -177,9 +177,9 @@ read_pestpg <- function(path) {
     stop("pestPG file is empty: ", path)
   }
 
-  chrom_col <- find_first_column(dt, c("Chr", "chr", "chrom"))
-  pos_col <- find_first_column(dt, c("WinCenter", "midPos", "Position", "pos"))
-  pi_col <- find_first_column(dt, c("tP", "thetaPi", "pi"))
+  chrom_col <- find_first_column(dt, c("#Chromo", "Chromo", "Chr", "chr", "chrom"))
+  pos_col <- find_first_column(dt, c("Pos", "WinCenter", "midPos", "Position", "pos"))
+  pi_col <- find_first_column(dt, c("tP", "thetaPi", "pi", "Pairwise"))
   nsites_col <- find_first_column(dt, c("nSites", "Nsites"))
 
   if (is.na(chrom_col) || is.na(pos_col) || is.na(pi_col)) {
@@ -189,10 +189,15 @@ read_pestpg <- function(path) {
     )
   }
 
+  pi_values <- as.numeric(dt[[pi_col]])
+  if (identical(pi_col, "Pairwise")) {
+    pi_values <- exp(pi_values)
+  }
+
   pest_dt <- data.table(
     chrom = as.character(dt[[chrom_col]]),
     pos = as.integer(dt[[pos_col]]),
-    pi_site = as.numeric(dt[[pi_col]])
+    pi_site = pi_values
   )
 
   if (!is.na(nsites_col)) {

@@ -3,7 +3,7 @@
 #SBATCH --nodes=1
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=12
-#SBATCH --mem=50G
+#SBATCH --mem=80G
 #SBATCH --time=48:00:00
 #SBATCH --account=g102-2488
 #SBATCH --partition=okeanos
@@ -105,6 +105,25 @@ any_dependency_newer() {
   return 1
 }
 
+theta_output_is_current() {
+  local theta_file="$1"
+  local union_prefix="$2"
+
+  if [[ ! -s "${theta_file}" ]]; then
+    return 1
+  fi
+
+  if any_dependency_newer "${theta_file}" "${union_prefix}.thetas.idx" "${union_prefix}.thetas.gz"; then
+    return 1
+  fi
+
+  if ! head -n 1 "${theta_file}" | grep -q $'^#Chromo\tPos\t'; then
+    return 1
+  fi
+
+  return 0
+}
+
 chrom_stream() {
   local bed_file="$1"
 
@@ -184,11 +203,13 @@ run_theta_by_chromosome() {
   while IFS= read -r chrom; do
     [[ -z "${chrom}" ]] && continue
     theta_prefix="${union_prefix}_${chrom}"
-    if ! any_dependency_newer "${theta_prefix}.pestPG" "${union_prefix}.thetas.idx" "${union_prefix}.thetas.gz"; then
+    if theta_output_is_current "${theta_prefix}.pestPG" "${union_prefix}"; then
       echo "Reusing thetaStat output: ${theta_prefix}.pestPG"
       continue
     fi
-    "${THETASTAT}" do_stat "${union_prefix}.thetas.idx" -r "${chrom}" -win 1 -step 1 -outnames "${theta_prefix}"
+    # thetaStat do_stat with -win 1 -step 1 accumulates a chromosome-wide string in memory.
+    # thetaStat print streams per-site theta values instead and avoids OOM on large chromosomes.
+    "${THETASTAT}" print "${union_prefix}.thetas.idx" -r "${chrom}" > "${theta_prefix}.pestPG"
   done < <(chrom_stream "${union_bed}")
 }
 
@@ -244,6 +265,7 @@ split_region_set_output() {
       BEGIN {
         n = 0
         idx = 1
+        pos_col = 0
       }
       FNR == NR {
         if ($1 != chrom) {
@@ -258,13 +280,22 @@ split_region_set_output() {
         if (print_header == 0) {
           print
         }
+        for (i = 1; i <= NF; i++) {
+          gsub(/^#/, "", $i)
+          if ($i == "Pos" || $i == "Position" || $i == "midPos" || $i == "WinCenter" || $i == "pos") {
+            pos_col = i
+          }
+        }
+        if (pos_col == 0) {
+          pos_col = 3
+        }
         next
       }
       n == 0 {
         next
       }
       {
-        pos = $3 + 0
+        pos = $(pos_col) + 0
         while (idx <= n && pos > end[idx]) {
           idx++
         }
