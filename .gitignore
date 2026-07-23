@@ -1,51 +1,168 @@
-# ===============================
-# DATA
-# ===============================
-# Ignore all raw and processed data (too large for Git).
-data/raw/*
-!data/raw/.gitkeep
-!data/raw/meta/
-!data/raw/meta/**
-data/processed/*
-!data/processed/.gitkeep
-!data/processed/meta/
-!data/processed/meta/**
-data/processed/meta/.~lock.*#
+# ------------------------------------------------------------
+# R and RStudio
+# ------------------------------------------------------------
 
-
-# ===============================
-# RESULTS
-# ===============================
-# Ignore heavy results and temporary runs.
-results/full/*
-results/full/
-!results/full/.gitkeep
-
-# Keep summary results (small CSV/plots are tracked).
-!results/summary/
-!results/summary/.gitkeep
-
-# Track placeholder for the parent results directory.
-!results/.gitkeep
-
-# ===============================
-# LOGS
-# ===============================
-logs/*
-!logs/.gitkeep
-
-# ===============================
-# HPC / Workflow cache
-# ===============================
-.slurm*
-*.out
-*.err
-
-# ===============================
-# R / RStudio
-# ===============================
-.Rproj.user/
-*.Rproj
 .Rhistory
 .RData
 .Ruserdata
+.Rproj.user/
+.Renviron
+.Rprofile.local
+
+# R temporary files
+.Rcheck/
+*.Rcheck/
+*.Rout
+*.Rout.fail
+*.Rout.save
+*.Rproj.user
+
+# ------------------------------------------------------------
+# Local configuration and credentials
+# ------------------------------------------------------------
+
+.env
+.env.*
+!.env.example
+
+config/local.yml
+config/local.yaml
+config/secrets.yml
+config/secrets.yaml
+
+# ------------------------------------------------------------
+# Operating system and editor files
+# ------------------------------------------------------------
+
+.DS_Store
+Thumbs.db
+*~
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# ------------------------------------------------------------
+# Temporary and log files
+# ------------------------------------------------------------
+
+q.txt
+*.tmp
+*.temp
+*.log
+*.out
+*.err
+
+tmp/
+temp/
+cache/
+
+# ------------------------------------------------------------
+# Raw and intermediate data
+# ------------------------------------------------------------
+
+data/raw/
+data/interim/
+data/processed/
+
+# Keep documentation files inside data directories if needed
+!data/**/README.md
+!data/**/.gitkeep
+
+# ------------------------------------------------------------
+# Large genomics and sequencing files
+# ------------------------------------------------------------
+
+*.fastq
+*.fastq.gz
+*.fq
+*.fq.gz
+
+*.bam
+*.bai
+*.sam
+*.cram
+*.crai
+
+*.vcf
+*.vcf.gz
+*.bcf
+*.tbi
+*.csi
+
+*.bed
+*.bed.gz
+*.bigWig
+*.bw
+
+*.h5
+*.hdf5
+*.rds
+*.RDS
+*.rda
+*.RData
+
+# ------------------------------------------------------------
+# Generated analysis results
+# ------------------------------------------------------------
+
+results/full/
+results/intermediate/
+results/tmp/
+results/cache/
+results/summary/
+
+# Keep selected summaries and final deliverables
+!results/final/
+!results/final/**
+
+# ------------------------------------------------------------
+# Generated reports
+# ------------------------------------------------------------
+
+reports/*_files/
+reports/*_cache/
+reports/.cache/
+
+notes/**
+presentation/**
+
+!notes/
+!presentation/
+
+!notes/**/*.Rmd
+!presentation/**/*.Rmd
+
+
+*.knit.md
+*.utf8.md
+*.aux
+*.bbl
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.out
+*.synctex.gz
+*.toc
+
+# ------------------------------------------------------------
+# Automatically generated figures
+# ------------------------------------------------------------
+
+figures/generated/
+plots/generated/
+
+# ------------------------------------------------------------
+# renv cache
+# ------------------------------------------------------------
+
+renv/library/
+renv/python/
+renv/staging/
+renv/local/
+
+# Do not ignore the reproducibility files
+!renv.lock
+!renv/activate.R
+!renv/settings.json
