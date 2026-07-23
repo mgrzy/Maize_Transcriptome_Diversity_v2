@@ -15,14 +15,15 @@ library(tidyverse)
 library(PCAForQTL)
 
 ### Load data
-dat <- data.table::fread("data/processed/rna/counts_NE2020_corrected_names_log2_cpm_filtered.csv.gz", data.table = F)
+dat <- read.csv("data/RNA/work/Filtered_Noralised_Counts.csv")
 
 ### 
-genoPC <- bigmemory::attach.big.matrix("data/processed/geno/rMVP/Dib639_MAF005.pc.desc")[]
-colnames(genoPC) <- c("PC_G1", "PC_G2", "PC_G3", "PC_G4", "PC_G5")
+genoPC <- read.table("results/PCA/PCA_Geno.eigenvec")
+genoPC <- genoPC[,-2]
+colnames(genoPC) <- c("Taxa", "PC_G1", "PC_G2", "PC_G3", "PC_G4", "PC_G5")
 
 ### 
-know.cov <- data.frame(Taxa=dat$Line, genoPC)
+know.cov <- left_join(dat[,c(1,2)], genoPC, by = "Taxa")
 rownames(know.cov) <- NULL
 
 ### Select column with expression
@@ -57,5 +58,8 @@ knownCovariatesFiltered <- filterKnownCovariates(know.cov[,-c(1)], PCsTop, unadj
 PCsTop <- scale(PCsTop)
 covariatesToUse<-cbind(knownCovariatesFiltered,PCsTop)
 
+covariatesToUse <- covariatesToUse %>%
+  mutate(Taxa = dat$Taxa, .before = DaysToPollen)
+
 ###
-write.csv(covariatesToUse, "results/full/covariateForEqlt/CovariateForEQTL.csv", row.names = F)
+write.csv(covariatesToUse, "data/meta/CovariateForEQTL.csv", row.names = F)

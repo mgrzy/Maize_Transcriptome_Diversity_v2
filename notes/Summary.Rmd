@@ -1,0 +1,42 @@
+---
+title: "Maize Transcriptome Diversity"
+author: "Marcin"
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+header-includes:
+  - \usepackage{float}
+bibliography: references.bib
+csl: nature.csl
+link-citations: true
+---
+
+```{r script setup ,message=FALSE, echo=F}
+# Script setup
+library(tidyverse)
+library(patchwork)
+library(ComplexUpset)
+library(data.table)
+library(dtplyr)
+library(scales)
+library(knitr)
+
+
+base_font_size <- 16
+theme_set(theme_classic(base_size = base_font_size))
+theme_update(
+  axis.text = element_text(colour = "black", size = base_font_size, face = "plain"),
+  axis.title = element_text(size = base_font_size, face = "plain"),
+  axis.ticks = element_line(colour = "black"),
+  legend.title = element_text(size = base_font_size, face = "plain"),
+  legend.text = element_text(size = base_font_size, face = "plain"),
+  plot.tag = element_text(size = base_font_size, face = "plain"),
+  plot.title.position = "plot"
+)
+
+
+```  
+
