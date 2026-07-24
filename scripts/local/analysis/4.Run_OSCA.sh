@@ -10,8 +10,16 @@
 ### Usage: bash analysis/4.Run_OSCA.sh (from repo root; adjust paths to osca binary)
 ### Prerequisites: OSCA binary at ../../soft/osca/osca
 ### Run OSCA
-../../soft/osca/osca --eqtl --bfile data/geno/plink/Div639 \
---befile data/OSCA/WiDiv631 \
---grm data/OSCA/WiDiv631_Kin \
---qcovar data/OSCA/WiDiv631_PC.txt \
---mlm --task-num 1 --task-id 1 --thread-num 8 --cis --cis-wind 2000 --no-fid --out results/eQTL/test
+
+conda activate mkl
+
+export LD_LIBRARY_PATH="$CONDA_PREFIX/lib:$LD_LIBRARY_PATH"
+
+for task_id in {1..10}; do
+  ../../soft/osca/osca --eqtl --bfile data/processed/geno/plink/Div639 \
+  --befile data/processed/osca/WiDiv631 \
+  --grm data/processed/osca/WiDiv631_Kin \
+  --qcovar data/processed/osca/WiDiv631_PC.txt \
+  --mlm --task-num 10 --task-id "$task_id" --thread-num 36 --cis --cis-wind 2000 --no-fid --out results/full/osca/cis2Mb
+  echo "OSCA task ${task_id}/10 completed."
+done
