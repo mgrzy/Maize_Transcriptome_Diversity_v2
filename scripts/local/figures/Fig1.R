@@ -23,12 +23,12 @@ myPal <- c("#66C5CC", "#F6CF71", "#DCB0F2", "#87C55F", "#9EB9F3", "#C3B091")
 # --- Fig1 panels ----------------------------------------------------------
 
 # PCA
-pc <- read.table("results/PCA/PCA_Geno.eigenvec") %>%
+pc <- read.table("results/full/PCA/PCA_Geno.eigenvec") %>%
   select(-V1)
 colnames(pc) <- c("Taxa", "PC1", "PC2", "PC3", "PC4", "PC5")
 
 # Meta data
-meta <- read.csv("data/meta/WiDiv_meta.csv")
+meta <- read.csv("data/raw/meta/WiDiv_meta.csv")
 pc <- merge(meta, pc, by = "Taxa") %>%
   mutate(
     Group = str_replace_all(Group, "Broad[_ ]origin-public", "Broad origin"),
@@ -36,10 +36,10 @@ pc <- merge(meta, pc, by = "Taxa") %>%
   )
 
 # CCA
-cca <- read.csv("results/CCA/CCA.csv")
+cca <- read.csv("results/full/CCA/CCA.csv")
 
 # R2
-r2 <- read.csv("results/R2/All_R2.csv")
+r2 <- read.csv("results/full/GeneExpressionVariance/All_R2.csv")
 
 # PCA plot: PC1 vs PC2 with legend inside to save space
 g1 <- ggplot(pc, aes(PC1, PC2, colour = Group)) +
@@ -68,13 +68,13 @@ g3 <- ggplot(r2, aes(x = r2)) +
 
 # --- Fig2 panels ----------------------------------------------------------
 
-cv <- read_csv("results/CV/All_CV.csv") %>%
+cv <- read_csv("results/full/GeneExpressionVariance/All_CV.csv") %>%
   mutate(
     Group = str_replace_all(Group, "Broad[_ ]origin-public", "Broad origin"),
     Group = factor(Group, levels = c("Tropical", "Broad origin", "Mixed", "SS", "NSS", "IDT"))
   )
 
-n.div <- read_csv("results/Pi/Pi_all.csv")
+n.div <- read_csv("results/full/Pi//Pi_all.csv")
 
 n.div.pop <- n.div %>%
   filter(pop %in% c("Tropical", "Broad_origin-public", "Broad origin-public", "Mixed", "SS", "NSS", "IDT")) %>%

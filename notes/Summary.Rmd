@@ -1,7 +1,5 @@
 ---
 title: "Maize Transcriptome Diversity"
-author: "Marcin"
-date: "`r Sys.Date()`"
 output:
   pdf_document:
     toc: true
@@ -13,7 +11,6 @@ bibliography: references.bib
 csl: nature.csl
 link-citations: true
 ---
-
 ```{r script setup ,message=FALSE, echo=F}
 # Script setup
 library(tidyverse)
@@ -36,7 +33,23 @@ theme_update(
   plot.tag = element_text(size = base_font_size, face = "plain"),
   plot.title.position = "plot"
 )
-
-
 ```  
 
+# Supplementary methods
+
+### Normalized expression matrix
+
+```{r varStab, echo=FALSE, out.width="80%", fig.align='center', fig.cap=" to do"}
+knitr::include_graphics("../results/figures/supp/Fig_GeneExpressionVaraianceNorm.png")
+```
+### Selection covariance for \textit{cis}-eQTL mapping
+
+```{r PCA-select, echo=FALSE, out.width="60%", fig.align='center', fig.cap=" to do"}
+knitr::include_graphics("../results/figures/supp/Fig_PCA_Var_exp.png")
+```
+
+# Supplementary figures
+
+```{r PCA-all-lines, echo=FALSE, out.width="80%", fig.align='center', fig.cap=" to do"}
+knitr::include_graphics("../results/figures/supp/Fig_PCA_All.png")
+```

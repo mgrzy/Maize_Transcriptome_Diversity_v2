@@ -20,6 +20,6 @@ for task_id in {1..10}; do
   --befile data/processed/osca/WiDiv631 \
   --grm data/processed/osca/WiDiv631_Kin \
   --qcovar data/processed/osca/WiDiv631_PC.txt \
-  --mlm --task-num 10 --task-id "$task_id" --thread-num 36 --cis --cis-wind 2000 --no-fid --out results/full/osca/cis2Mb
+  --mlm --task-num 10 --task-id "$task_id" --thread-num 64 --cis --cis-wind 2000 --no-fid --out results/full/osca/cis2Mb
   echo "OSCA task ${task_id}/10 completed."
 done

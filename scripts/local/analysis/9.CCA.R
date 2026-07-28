@@ -10,9 +10,9 @@
 
 library(CCA)
 
-pcaAll <- read.csv("results/PCA/PCAAll.csv")
+pca.gen <- read.table("results/full/PCA/PCA_Geno.eigenvec")
 
-pca.gen <- read.table("results/PCA/PCA_Geno.eigenvec")
+pcaAll <- read.csv("results/full/GeneExpressionVariance/PCAAll.csv")
 colnames(pca.gen)[1] <- "Taxa"
 pca.gen <- pca.gen[,-c(2)]
 colnames(pca.gen)[2:6] <- c("PC1", "PC2", "PC3", "PC4", "PC5")
@@ -26,4 +26,4 @@ res <- as.data.frame(res$scores$xscores)
 res <- cbind.data.frame(X[,c(1,7,8)], res)
 colnames(res)[4:8] <- c("CCA1", "CCA2", "CCA3", "CCA4", "CCA5")
 
-write.csv(res, "results/CCA/CCA.csv", row.names = F)
+write.csv(res, "results/full/CCA/CCA.csv", row.names = F)

@@ -48,19 +48,19 @@ K_elbow <- resElbow
 K_BE <- resBE$numOfPCsChosen
 
 ### Scree plot
+resPCA <- summary(resPCA)
+
+im <- t(resPCA$importance)
+
+im <- data.frame(im)
+
+im$idx <- 1:631
+
 makeScreePlot(resPCA, labels = c("Elbow", "BE"), values = c(K_elbow, K_BE), maxNumOfPCsToPlot = 150)
 
-###  Select PCs based on BE
-PCsTop <- resPCA$x[,1:K_BE]
-PCsTop <- as.data.frame(PCsTop)
-
-### Remove know covariats which correlates with PC based on RNA
-knownCovariatesFiltered <- filterKnownCovariates(know.cov[,-c(1)], PCsTop, unadjustedR2_cutoff = 0.9)
-
-### Create file with covariats for eQTL
-PCsTop <- scale(PCsTop)
-covariatesToUse<-cbind(knownCovariatesFiltered,PCsTop)
-
-###
-write.csv(covariatesToUse, "data/processed/osca/CovariateForEQTL.csv", row.names = F)
+ggsave(
+  filename = "results/figures/supp/Fig_PCA_Var_exp.png",
+  width = 12,
+  height = 6,
+)
 

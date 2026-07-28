@@ -80,6 +80,7 @@ oii <- data.frame(Taxa=fam$Taxa, a=0, b=0, z =NA)
 PC <- left_join(oii[,"Taxa", drop=FALSE], PC, by="Taxa")
 #PC <- PC[,-c(1)]
 colnames(PC)[2] <- "Taxa2"
+PC <- PC[,c(-18:-32)]
 #PC <- PC %>% mutate(Taxa2 = PC$Taxa, .after = Taxa)
 
 # 7) Reduce the expression matrix to the OSCA-required columns

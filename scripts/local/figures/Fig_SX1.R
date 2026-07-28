@@ -26,7 +26,7 @@ data.raw <- data.raw[data.raw$Gene %in% data.log2$Gene,]
 
 ###
 g1 <- ggplot(data.raw, aes(Mean, SD)) + 
-  geom_point(size = 0.1) + 
+  geom_point(size = 0.05) + 
   geom_smooth() + 
   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) + 
@@ -36,20 +36,20 @@ g1 <- ggplot(data.raw, aes(Mean, SD)) +
   labs(x = expression(mu), y=expression(sigma))   
 
 g2 <- ggplot(data.log2, aes(Mean, SD)) + 
-  geom_point(size = 0.1) + 
+  geom_point(size = 0.05) + 
   geom_smooth() + 
   labs(x = expression(mu), y=expression(sigma))   
 
 
 g3 <- ggplot(data.vst, aes(Mean, SD)) + 
-  geom_point(size = 0.1) + 
+  geom_point(size = 0.05) + 
   geom_smooth() + 
   labs(x = expression(mu), y=expression(sigma))   
 
 combined_plot <- g1 + g2 + g3 + plot_annotation(tag_levels = "A")
 
 ggsave(
-  filename = "results/figures/Fig_GeneExpressionVaraianceNorm.png",
+  filename = "results/figures/supp/Fig_GeneExpressionVaraianceNorm.png",
   plot = combined_plot,
   width = 21,
   height = 6,
