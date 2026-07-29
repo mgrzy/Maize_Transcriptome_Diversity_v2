@@ -35,7 +35,11 @@ if (!all(needed_columns %in% index_columns)) stop("Adjusted-result file does not
 repeat {
   lines <- readLines(index_connection, n = lines_per_chunk)
   if (!length(lines)) break
-  index_chunk <- fread(text = lines, header = FALSE, col.names = index_columns, select = needed_columns)
+  # With `header = FALSE`, fread applies character `select` to its temporary
+  # V1, V2, ... names rather than to `col.names`.  Read the small index rows
+  # first, then subset by the names assigned through `col.names`.
+  index_chunk <- fread(text = lines, header = FALSE, col.names = index_columns)
+  index_chunk <- index_chunk[, ..needed_columns]
   for (current_index in unique(index_chunk$file_index)) {
     index_path <- file.path(tmp_dir, paste0("batch_", current_index, ".tsv"))
     fwrite(index_chunk[file_index == current_index], index_path,
