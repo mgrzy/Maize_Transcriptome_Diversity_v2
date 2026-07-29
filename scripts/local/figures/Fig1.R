@@ -124,13 +124,4 @@ ggsave(
   units = "cm"
 )
 
-# Also save a vector PDF copy
-ggsave(
-  filename = sub("\\.png$", ".pdf", output_path),
-  plot = combined_plot,
-  width = 17.5,
-  height = 12,
-  units = "cm"
-)
-
 message("Combined figure saved to ", output_path)
