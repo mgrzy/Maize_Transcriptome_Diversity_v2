@@ -19,7 +19,7 @@ defaults <- list(
   covariates = file.path(project_root, "data/processed/osca/WiDiv631_PC.txt"),
   tss = file.path(project_root, "data/processed/osca/WiDiv631_OPI.txt"),
   output_dir = file.path(project_root, "results/full/SusieR"),
-  window_bp = 1000000L, L = 10L, max_iter = 500L, seed = 1L
+  window_bp = 2000000L, L = 10L, max_iter = 500L, seed = 1L
 )
 usage <- function() cat(
   "Usage: Rscript 5.SusieR.R --genes-file FILE --batch-id ID [options]\n",
