@@ -1,29 +1,38 @@
-### Script: processing/11.DowSampling.R
+### Script: scripts/local/procesing/11.DowSampling.R
 ### Purpose: Create reproducible, approximately group-proportional subsets of
 ###          the PCA-matched lines for PLINK downsampling analyses.
 ### Inputs:
-###  - data/meta/TableS1.csv
-###  - results/PCA/PCA_Geno.eigenvec
-###  - data/geno/plink/Div639.fam
+###  - data/raw/meta/TableS1.csv
+###  - results/full/PCA/PCA_Geno.eigenvec
+###  - data/processed/geno/plink/Div639.fam
 ### Outputs:
-###  - data/meta/downsample/DownSampling_<n>.fam
-###  - data/meta/downsample/DownSampling_group_counts.tsv
-### Usage: Rscript processing/11.DowSampling.R
+###  - data/processed/meta/downsample/DownSampling_<n>.fam
+###  - data/processed/meta/downsample/DownSampling_group_counts.tsv
+### Usage: Rscript scripts/local/procesing/11.DowSampling.R
 ### Dependencies: tidyverse
 
 library(tidyverse)
 
+# Resolve project-relative paths even when the script is run outside the
+# repository root.
+script_file <- sub("^--file=", "", commandArgs(trailingOnly = FALSE)[
+  grep("^--file=", commandArgs(trailingOnly = FALSE))
+])
+if (length(script_file) == 1L) {
+  setwd(normalizePath(file.path(dirname(script_file), "../../..")))
+}
+
 set.seed(20260722)
 
-dat <- read.csv("data/meta/TableS1.csv", stringsAsFactors = FALSE)
-pca.snp <- read.table("results/PCA/PCA_Geno.eigenvec", stringsAsFactors = FALSE)
+dat <- read.csv("data/raw/meta/TableS1.csv", stringsAsFactors = FALSE)
+pca.snp <- read.table("results/full/PCA/PCA_Geno.eigenvec", stringsAsFactors = FALSE)
 
 # Keep the same PCA-matched lines used to generate the genetic PCA.
 dat2 <- dat[as.character(dat$ID) %in% as.character(pca.snp$V1), , drop = FALSE]
 dat2$ID <- as.character(dat2$ID)
 
 fam <- read.table(
-  "data/geno/plink/Div639.fam",
+  "data/processed/geno/plink/Div639.fam",
   colClasses = "character",
   stringsAsFactors = FALSE
 )
@@ -60,7 +69,7 @@ allocate_by_group <- function(n, group_counts) {
 
 group_counts <- table(dat2$Group)
 targets <- c(100L, 150L, 200L, 300L, 400L, 500L, 550L, 600L)
-out_dir <- "data/meta/downsample"
+out_dir <- "data/processed/meta/downsample"
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 
 allocation_summary <- vector("list", length(targets))
