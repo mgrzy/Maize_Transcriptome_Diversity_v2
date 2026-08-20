@@ -24,7 +24,7 @@ cfg <- list(
   output_dir = "results/summary/eQTL_genomic_context_enrichment",
 
   # Matches scripts/local/analysis/5.SusieR.R (window_bp = 1,000,000).
-  cis_window_bp = 1000000L,
+  cis_window_bp = 2000000L,
   maf_bin_width = 0.05,
   distance_breaks = c(
     0,

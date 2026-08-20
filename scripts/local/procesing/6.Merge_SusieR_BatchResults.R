@@ -30,7 +30,7 @@ if (length(script_file_arg)) {
 project_root <- normalizePath(file.path(dirname(script_path), "../../.."))
 
 options <- list(
-  susie_dir = file.path(project_root, "results/full/SusieR"),
+  susie_dir = file.path(project_root, "results/full/SusieR/"),
   summary_dir = file.path(project_root, "results/summary/SusieR")
 )
 

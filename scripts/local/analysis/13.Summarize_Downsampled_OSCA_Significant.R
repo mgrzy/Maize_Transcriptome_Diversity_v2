@@ -6,6 +6,7 @@
 ###  - results/full/osca/full_5Geno_5ExprPC/significant*
 ### Outputs:
 ###  - results/full/osca/significant_summary/significant_gene_counts.tsv
+###    (includes the mean number of significant SNPs per significant gene)
 ###  - results/full/osca/significant_summary/significant_snps_per_gene.tsv
 ### Usage: Rscript scripts/local/analysis/13.Summarize_Downsampled_OSCA_Significant.R
 ### Dependencies: data.table
@@ -90,6 +91,7 @@ for (i in seq_along(significant_files)) {
     ResultFile = basename(result_file),
     SignificantGenes = nrow(snps_per_gene),
     SignificantSNPs = sum(snps_per_gene$SignificantSNPs),
+    MeanSignificantSNPsPerGene = mean(snps_per_gene$SignificantSNPs),
     SignificantAssociations = nrow(results)
   )
   gene_summaries[[i]] <- snps_per_gene

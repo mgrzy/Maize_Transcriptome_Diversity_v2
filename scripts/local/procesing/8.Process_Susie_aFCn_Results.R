@@ -1,5 +1,6 @@
 #!/usr/bin/env Rscript
-# Summarise SuSiE results and join reliable aFCn estimates with PLINK MAF.
+# Summarise SuSiE results and join reliable aFCn estimates with PLINK MAF and
+# target-gene TSS distances.
 #
 # The default aFCn standard-error cutoff is 0.5 on the log2(aFC) scale.
 # Override it when running, for example:
@@ -12,6 +13,7 @@ PIP_PATH <- "results/full/SusieR/PIP_all_batches.tsv.gz"
 EGENE_PATH <- "results/summary/osca/eGene.txt"
 AFCN_PATH <- "results/full/AF/aFCn.txt"
 MAF_PATH <- "data/processed/geno/plink/plink.frq"
+GFF_PATH <- "../BigData/Maize/v5/GFF/Zm-B73-REFERENCE-NAM-5.0_Zm00001eb.1.gff3.gz"
 SUSIE_OUTPUT_DIR <- "results/summary/SusieR"
 AFCN_OUTPUT_DIR <- SUSIE_OUTPUT_DIR
 
@@ -21,6 +23,46 @@ if (!is.finite(MAX_LOG2_AFC_SE) || MAX_LOG2_AFC_SE < 0) {
 }
 
 dir.create(SUSIE_OUTPUT_DIR, recursive = TRUE, showWarnings = FALSE)
+
+# aFCn variant IDs follow chr_position (for example, chr1_248511).  Keep the
+# parser deliberately permissive so it also supports colon-delimited IDs and
+# IDs with allele suffixes.
+parse_variant_ids <- function(variant_ids) {
+  variant_ids <- as.character(variant_ids)
+  matches <- regexec("^([^:_]+)[:_]([0-9]+)(?:[:_].*)?$", variant_ids)
+  parts <- regmatches(variant_ids, matches)
+
+  data.table(
+    variant_chromosome = vapply(parts, function(x) if (length(x)) x[[2L]] else NA_character_, character(1)),
+    variant_position = suppressWarnings(as.integer(vapply(
+      parts, function(x) if (length(x)) x[[3L]] else NA_character_, character(1)
+    )))
+  )
+}
+
+load_gene_tss <- function(gff_path) {
+  if (!file.exists(gff_path)) {
+    stop("GFF annotation file not found: ", gff_path)
+  }
+
+  annotation <- fread(
+    gff_path,
+    sep = "\t",
+    header = FALSE,
+    comment.char = "#",
+    select = c(1, 3, 4, 5, 7, 9),
+    col.names = c("chromosome", "feature", "start", "end", "strand", "attributes")
+  )
+  annotation <- annotation[feature == "gene"]
+  annotation[, gene_id := sub("(^|.*;)ID=([^;]+)(;.*|$)", "\\2", attributes)]
+  annotation[!grepl("(^|;)ID=", attributes), gene_id := NA_character_]
+  annotation <- annotation[!is.na(gene_id) & strand %in% c("+", "-")]
+  annotation[, tss := ifelse(strand == "-", end, start)]
+
+  # A gene should have one annotation row. Retaining the first row makes the
+  # join deterministic if a future annotation contains duplicated IDs.
+  unique(annotation[, .(gene_id, gene_chromosome = chromosome, gene_tss = tss)], by = "gene_id")
+}
 
 pip <- fread(PIP_PATH)
 eGene <- fread(EGENE_PATH, header = FALSE, col.names = "gene")
@@ -83,9 +125,28 @@ maf <- unique(
 )
 
 afcn_maf <- merge(afcn, maf, by = "variant_id", all = FALSE, sort = FALSE)
+
+# Add the signed distance in reference coordinates (variant position - TSS)
+# and its absolute value. Both are NA when a variant ID cannot be parsed or
+# its target gene is absent from the GFF annotation / lies on another sequence.
+variant_coordinates <- parse_variant_ids(afcn_maf$variant_id)
+gene_tss <- load_gene_tss(GFF_PATH)
+target_gene_index <- match(afcn_maf$gene_id, gene_tss$gene_id)
+same_chromosome <- !is.na(target_gene_index) &
+  !is.na(variant_coordinates$variant_chromosome) &
+  !is.na(variant_coordinates$variant_position) &
+  variant_coordinates$variant_chromosome == gene_tss$gene_chromosome[target_gene_index]
+distance_to_TSS <- rep(NA_integer_, nrow(afcn_maf))
+distance_to_TSS[same_chromosome] <-
+  variant_coordinates$variant_position[same_chromosome] - gene_tss$gene_tss[target_gene_index[same_chromosome]]
+afcn_maf[, `:=`(
+  distance_to_TSS = distance_to_TSS,
+  abs_distance_to_TSS = abs(distance_to_TSS)
+)]
 setcolorder(
   afcn_maf,
-  c("gene_id", "variant_id", "log2_aFC", "log2_aFC_error", "log2_aFC_c0", "MAF")
+  c("gene_id", "variant_id", "log2_aFC", "log2_aFC_error", "log2_aFC_c0", "MAF",
+    "distance_to_TSS", "abs_distance_to_TSS")
 )
 setorder(afcn_maf, gene_id, variant_id)
 

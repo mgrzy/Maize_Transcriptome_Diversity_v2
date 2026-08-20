@@ -265,7 +265,7 @@ fig2_psbs <- (g_psbs_manhattan / g_psbs_genes) + plot_layout(widths = c(1.65, 1)
 fig2_bottom <- (fig2_psbs | g_psbs_haplotypes) +
   plot_layout(widths = c(2.3, 1))
 
-fig2 <- fig2_summary / fig2_bottom + plot_layout(heights = c(2, 1)) + 
+fig2 <- fig2_summary / fig2_bottom + plot_layout(heights = c(2, 1)) 
 
 # Save the summary and the PSBS example as separate figures.
 ggsave(
@@ -275,3 +275,4 @@ ggsave(
   height = 10,
   dpi = 300
 )
+
