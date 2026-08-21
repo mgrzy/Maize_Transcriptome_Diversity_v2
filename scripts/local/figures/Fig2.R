@@ -41,6 +41,24 @@ h2r2 <- fread("results/summary/Heritability_and_r2/narrow_sense_h2_and_r2.tsv.gz
 h2r2 <- h2r2 %>%
   filter(gene %in% pip.af$gene_id & osca_r2_test > 0 & susie_r2_test > 0)
 
+enr <- read.csv("results/summary/SusieR/enrichment_distance.csv")
+
+enr$distance_bin <- factor(enr$distance_bin, levels = c(
+  "0–1 kb",
+  "1–2 kb",
+  "2–5 kb",
+  "5–10 kb",
+  "10–50 kb",
+  "50–100 kb",
+  "100–250 kb",
+  "250–500 kb",
+  "0.5–1 Mb",
+  "1–2 Mb",
+  ">2 Mb"
+))
+
+enr <- enr[1:10,]
+
 ###
 g1 <- ggplot(cs, aes(as.factor(cs), n)) + 
   geom_col(fill=myPal[1], colour="black") + 
@@ -85,14 +103,33 @@ g5 <- ggplot(h2r2, aes(osca_r2_test, susie_r2_test, colour=as.factor(susie_n_var
     legend.text = element_text(size = 3)
   )
 
-g6 <- ggplot(h2r2, aes(as.factor(susie_n_variants), susie_r2_test - osca_r2_test,  fill=as.factor(susie_n_variants))) + 
-  geom_boxplot() + 
-  ylab(expression(Delta~italic(R2))) +
-  xlab("Number of credible sets") + 
-  scale_fill_viridis_d(name="N causal sets") +
-  theme(legend.position = "none")
+g6 <- ggplot(
+  enr,
+  aes(x = distance_bin, y = log2_fold_enrichment)
+) +
+  geom_hline(
+    yintercept = 0,
+    linetype = "dashed",
+    colour = "grey50"
+  ) +
+  geom_col(
+    fill = "#87C55F",
+    colour = "black",
+    linewidth = 0.3
+  ) +
+  labs(
+    x = "Distance from target-gene TSS",
+    y = expression(log[2] * " fold enrichment")
+  ) +
+  theme_classic() +
+  theme(
+    axis.text.x = element_text(
+      angle = 45,
+      hjust = 1
+    )
+  )
 
-fig2_summary <- g1 + g2 + g3 + g4 + g5 + g6
+fig2_summary <- g1 + g2 + g3 + g6 + g4 + g5
 
 ####################
 ### PSBS exmaple ###
