@@ -37,7 +37,15 @@ The main analysis includes:
 │   │   └── rest/                      # download / auxiliary HPC workflows
 │   ├── local/
 │   │   ├── processing/                # preprocessing and dataset preparation
-│   │   ├── analysis/                  # statistical and downstream analyses
+│   │   ├── analysis/
+│   │   │   ├── expression/            # expression diversity, CCA and heritability
+│   │   │   ├── eqtl/                  # OSCA mapping, significance and IHW
+│   │   │   ├── fine_mapping/          # SuSiE, aFC and coloc
+│   │   │   ├── differential_expression/ # limma DE and summaries
+│   │   │   ├── functional_annotation/ # genomic context, GERP/CAD, ATAC/TF enrichment
+│   │   │   ├── population_genetics/   # pi, genotype PCA, FST and DEG/eQTL integration
+│   │   │   ├── downsampling/          # sample-size sensitivity analysis
+│   │   │   └── todo/                  # historical/incomplete analysis scripts
 │   │   ├── figures/                   # main and supplementary figure scripts
 │   │   └── prepare_Tu_TF_consensus_peaks.sh
 │   └── utils/
@@ -64,9 +72,11 @@ Used for compute-intensive workflows such as genotype processing, OSCA/eQTL anal
 - Do not commit FASTQ, BAM/CRAM, VCF/BCF, large BED files, RDS objects, or full analysis outputs.
 - Keep reusable functions in `scripts/utils/functions.R` rather than copying helpers between scripts.
 - New local data-preparation scripts belong in `scripts/local/processing/`.
-- New downstream analyses belong in `scripts/local/analysis/`.
+- New analysis scripts should go into the relevant domain folder under `scripts/local/analysis/` rather than the analysis root.
 - Manuscript figure scripts belong in `scripts/local/figures/`.
 - HPC production jobs belong in `scripts/hpc/`.
+
+See `scripts/local/analysis/README.md` for the analysis-folder map and execution-order notes.
 
 ## Reproducibility
 
