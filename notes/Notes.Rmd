@@ -1,0 +1,34 @@
+---
+title: "Notes"
+output:
+  pdf_document:
+header-includes:
+---
+
+### To do list:
+
+Fig 1:
+
+- [X] PCA on snp markers
+- [X] CCA on pca from snp markers and rna
+- [X] R2 for each gene expression 
+- [X] Pi
+- [X] CV for each gene expression 
+
+Fig 2:
+
+- [] Number of CS per gene
+- [] Number of variants per CS
+- [] aFCn for each gene
+- [] h2 for each gene per CS
+- [] R2 for top snp vs CS set for test set 
+- [] Example of fine-mapped gene - PSBS
+
+Fig 3:
+
+- [] Anotation of fine mapped-snps
+
+Fig 4:
+
+- [] Selection
+

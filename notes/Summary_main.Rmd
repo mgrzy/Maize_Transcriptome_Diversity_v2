@@ -1,0 +1,96 @@
+---
+title: "Maize Transcriptome Diversity"
+output:
+  pdf_document:
+    toc: true
+    toc_depth: 3
+    number_sections: true
+header-includes:
+  - \usepackage{float}
+bibliography: references.bib
+csl: nature.csl
+link-citations: true
+---
+```{r script setup ,message=FALSE, echo=F}
+# Script setup
+library(tidyverse)
+library(patchwork)
+library(ComplexUpset)
+library(data.table)
+library(dtplyr)
+library(scales)
+library(knitr)
+
+
+base_font_size <- 16
+theme_set(theme_classic(base_size = base_font_size))
+theme_update(
+  axis.text = element_text(colour = "black", size = base_font_size, face = "plain"),
+  axis.title = element_text(size = base_font_size, face = "plain"),
+  axis.ticks = element_line(colour = "black"),
+  legend.title = element_text(size = base_font_size, face = "plain"),
+  legend.text = element_text(size = base_font_size, face = "plain"),
+  plot.tag = element_text(size = base_font_size, face = "plain"),
+  plot.title.position = "plot"
+)
+
+fig1_caption <- paste(
+  "\\textbf{Genomic and transcriptomic diversity across maize subpopulations.}",
+  "(\\textbf{A}) Principal component analysis of genome-wide genetic variants, coloured by subpopulation.",
+  "(\\textbf{B}) Canonical correlation analysis relating genetic and gene-expression variation.",
+  "(\\textbf{C}) Distribution of the proportion of flowering-time-corrected gene-expression variance explained by subpopulation.",
+  "(\\textbf{D}) Nucleotide diversity ($\\pi$) across subpopulations.",
+  "(\\textbf{E}) Distribution of the coefficient of variation of gene expression across subpopulations.",
+  "Tropical, broad-origin, mixed, stiff-stalk (SS), non-stiff-stalk (NSS), and Iodent (IDT) lines are shown throughout."
+)
+
+fig2_caption <- paste(
+  "\\textbf{Fine-mapping architecture and a multi-variant eQTL example.}",
+  "(\\textbf{A}) Number of credible causal sets per eGene.",
+  "(\\textbf{B}) Relationship between the number of variants in a cis window and the number of credible sets.",
+  "(\\textbf{C}) Distribution of allelic fold changes (aFCs) for eQTNs; dashed lines indicate $\\log_2$ aFC values of $-2$ and $2$.",
+  "(\\textbf{D}) Enrichment of fine-mapped variants by distance from the target-gene transcription start site.",
+  "(\\textbf{E}) Narrow-sense heritability by number of credible sets.",
+  "(\\textbf{F}) Agreement between single-variant and multiple-variant eQTL-model $R^2$ values.",
+  "(\\textbf{G--H}) Local association signal and gene track for PSBS (Zm00001eb146510), with credible-set lead variants highlighted.",
+  "(\\textbf{I}) Expression across the most frequent three-SNP genotype haplotypes."
+)
+
+fig3_caption <- paste(
+  "\\textbf{Fine-mapped eQTL enrichment across genomic, tissue-specific, and functional annotations.}",
+  "(\\textbf{A}) Fold enrichment of fine-mapped eQTLs across genomic features, with the proportion of eQTLs assigned to each feature shown at right.",
+  "(\\textbf{B}) Fold enrichment and eQTL proportion by leaf and ear expression specificity.",
+  "(\\textbf{C}) Functional-category enrichment of fine-mapped eQTLs using leaf-ATAC-matched and standard matched controls; bars show the proportion of eQTLs in each category."
+)
+
+fig4_caption <- paste(
+  "\\textbf{Fine-mapped eQTL effect sizes, population differentiation, and a Zm00001eb392880 example.}",
+  "(\\textbf{A}) Absolute aFC by minor-allele-frequency bin.",
+  "(\\textbf{B}) Absolute aFC for genes in the top decile of positive GERP scores and all other genes.",
+  "(\\textbf{C}) Distribution of credible-set counts for the same gene groups.",
+  "(\\textbf{D}) $F_{ST}$ across adjusted-expression-significance deciles for five population comparisons.",
+  "(\\textbf{E}) Zm00001eb392880 expression across Tropical, NSS, SS, and Iodent lines.",
+  "(\\textbf{F--G}) Local eQTL association signal and gene track, with fine-mapped credible-set variants highlighted.",
+  "(\\textbf{H}) Major and alternative allele frequencies of fine-mapped variants across subpopulations.",
+  "(\\textbf{I}) Expression across the four most frequent fine-mapped-variant haplotypes."
+)
+```  
+
+# Main
+
+
+```{r Fig1, echo=FALSE, out.width="100%", fig.align='center', fig.cap=fig1_caption}
+knitr::include_graphics("../results/figures/Fig1.png")
+```
+
+```{r Fig2, echo=FALSE, out.width="100%", fig.align='center', fig.cap=fig2_caption}
+knitr::include_graphics("../results/figures/Fig2.png")
+```
+
+```{r Fig3, echo=FALSE, out.width="100%", fig.align='center', fig.cap=fig3_caption}
+knitr::include_graphics("../results/figures/Fig3.png")
+```
+
+```{r Fig4, echo=FALSE, out.width="100%", fig.align='center', fig.cap=fig4_caption}
+knitr::include_graphics("../results/figures/Fig4.png")
+```
