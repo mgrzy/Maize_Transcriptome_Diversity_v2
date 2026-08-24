@@ -31,11 +31,12 @@ git add --update
 allowed_paths=(
     ".gitignore"
     "README.md"
-    "AGENTS.md"
+    "AGENTIC.md"
     "renv.lock"
     "renv/activate.R"
     "renv/settings.json"
     "config"
+    "notes"
     "scripts"
 )
 

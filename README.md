@@ -1,30 +1,75 @@
-# Maize Cold Spring
+# Maize Transcriptome Diversity
 
-## Overview
-This repository contains the **code, configs, and documentation** for the Maize Transcriptome Diversity project.  
-The project is executed in two environments:
-- **Local (RStudio)** → exploratory analysis, visualization, small-scale testing  
-- **HPC (SLURM)** → heavy pipelines, full-scale computations  
+Code and lightweight documentation for the **Maize Transcriptome Diversity** project, focused on natural variation in gene expression and its genetic and evolutionary basis in the WiDiv maize diversity panel.
 
-Raw and processed data are stored on HPC and synced via Google Drive.  
-**GitHub contains only code, configs, and documentation.**
+The repository contains analysis, figure-generation, preprocessing, and HPC workflow code. Large genomic, RNA-seq, and intermediate result files are intentionally kept outside Git.
 
----
+## Project scope
 
-## Project structure
+The main analysis includes:
 
-- `config/` → environment configs (paths_local.sh, paths_hpc.sh) and sample lists  
-- `data/`  
-  - `raw/` → raw input data (FASTQ/VCF, ignored in Git)  
-  - `processed/` → processed intermediate files (ignored in Git)  
-- `docs/` → project documentation and RMarkdown analysis notebooks  
-- `logs/` → pipeline and SLURM logs (ignored in Git)  
-- `results/`  
-  - `full/` → full results (ignored in Git, synced via Drive)  
-  - `summary/` → small CSVs/plots for reports (tracked in Git)  
-- `scripts/`  
-  - `hpc/` → production-level scripts and SLURM workflows  
-  - `local/` → exploratory/local analysis scripts  
-  - `utils/` → shared helper functions (R/Bash)  
-- `README.md` → project overview  
-- `.gitignore` - files ignored by git
+- transcriptomic diversity and population structure in the WiDiv panel;
+- cis-eQTL mapping with OSCA mixed models;
+- multiple-testing correction using IHW with distance to TSS;
+- fine-mapping with SuSiE / SuSiE-RSS;
+- allelic effect-size estimation (aFC-n);
+- functional annotation and enrichment of fine-mapped regulatory variants;
+- chromatin, ATAC-seq, and TF ChIP overlap analyses;
+- population-genetic analyses including nucleotide diversity and FST;
+- sensitivity analyses such as sample-size downsampling;
+- manuscript and supplementary figure generation.
+
+## Repository structure
+
+```text
+.
+├── AGENTIC.md                         # guidance for AI/code agents working on the project
+├── README.md                          # this file
+├── Maize_Transcriptome_Diversity_v2.Rproj
+├── data/
+│   ├── raw/                           # local/raw inputs; large files ignored by Git
+│   └── processed/                     # derived inputs; large files ignored by Git
+├── notes/
+│   └── Summary.Rmd                    # project notes / analysis summary
+├── scripts/
+│   ├── hpc/                           # HPC and SLURM workflows
+│   │   ├── pop/                       # population-genetic workflows
+│   │   └── rest/                      # download / auxiliary HPC workflows
+│   ├── local/
+│   │   ├── processing/                # preprocessing and dataset preparation
+│   │   ├── analysis/                  # statistical and downstream analyses
+│   │   ├── figures/                   # main and supplementary figure scripts
+│   │   └── prepare_Tu_TF_consensus_peaks.sh
+│   └── utils/
+│       └── functions.R                # reusable R helper functions
+└── sync.sh                            # conservative Git sync helper
+```
+
+Generated results are generally written under `results/` in the working copy. Large results and intermediate files should not be committed.
+
+## Analysis environments
+
+### Local workstation
+
+Used for R/RStudio analyses, plotting, integration of summary files, and small-to-medium preprocessing jobs.
+
+### HPC
+
+Used for compute-intensive workflows such as genotype processing, OSCA/eQTL analyses, population-genetic calculations, and large batch operations. HPC scripts are under `scripts/hpc/`.
+
+## Conventions
+
+- Run scripts from the repository root unless a script explicitly documents otherwise.
+- Prefer project-relative paths such as `data/...` and `results/...`.
+- Do not commit FASTQ, BAM/CRAM, VCF/BCF, large BED files, RDS objects, or full analysis outputs.
+- Keep reusable functions in `scripts/utils/functions.R` rather than copying helpers between scripts.
+- New local data-preparation scripts belong in `scripts/local/processing/`.
+- New downstream analyses belong in `scripts/local/analysis/`.
+- Manuscript figure scripts belong in `scripts/local/figures/`.
+- HPC production jobs belong in `scripts/hpc/`.
+
+## Reproducibility
+
+The `.gitignore` is intentionally strict for large genomics files and generated results. If package reproducibility is managed with `renv`, commit `renv.lock`, `renv/activate.R`, and `renv/settings.json`, but never the local `renv/library/` cache.
+
+For detailed instructions to coding agents and future automated maintenance, see [`AGENTIC.md`](AGENTIC.md).
