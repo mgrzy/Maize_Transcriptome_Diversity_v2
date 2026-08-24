@@ -28,12 +28,20 @@ Do not silently change these assumptions. If a requested modification changes th
 
 ```text
 scripts/
-├── hpc/                # production and SLURM/HPC workflows
+├── hpc/                         # production and SLURM/HPC workflows
 ├── local/
-│   ├── processing/     # preparation of genotype/expression/covariate inputs
-│   ├── analysis/       # statistical and downstream analyses
-│   └── figures/        # main and supplementary manuscript figures
-└── utils/              # reusable helper functions
+│   ├── processing/              # preparation of genotype/expression/covariate inputs
+│   ├── analysis/
+│   │   ├── expression/          # expression diversity, CCA, heritability
+│   │   ├── eqtl/                # OSCA mapping and significance/IHW
+│   │   ├── fine_mapping/        # SuSiE, aFC, coloc
+│   │   ├── differential_expression/ # limma DE workflows
+│   │   ├── functional_annotation/   # GERP/CAD, genomic context, ATAC/TF enrichment
+│   │   ├── population_genetics/ # pi, PCA, FST, evolutionary integration
+│   │   ├── downsampling/        # sample-size sensitivity analyses
+│   │   └── todo/                # historical or incomplete analyses
+│   └── figures/                 # manuscript and supplementary figures
+└── utils/                       # reusable helper functions
 ```
 
 Other important locations:
@@ -43,6 +51,7 @@ Other important locations:
 - `notes/`: lightweight project notes and R Markdown summaries;
 - `results/`: generated outputs in the working copy; generally not tracked;
 - `scripts/utils/functions.R`: shared R helper functions;
+- `scripts/local/analysis/README.md`: map of analysis domains;
 - `sync.sh`: conservative helper for syncing code to GitHub.
 
 ## General rules
@@ -141,12 +150,18 @@ Manuscript figure scripts should:
 For new files:
 
 - processing/data-preparation code: `scripts/local/processing/`;
-- downstream statistical analysis: `scripts/local/analysis/`;
+- expression diversity/heritability: `scripts/local/analysis/expression/`;
+- eQTL mapping/significance: `scripts/local/analysis/eqtl/`;
+- fine-mapping/aFC/coloc: `scripts/local/analysis/fine_mapping/`;
+- differential expression: `scripts/local/analysis/differential_expression/`;
+- regulatory/functional interpretation: `scripts/local/analysis/functional_annotation/`;
+- population genetics: `scripts/local/analysis/population_genetics/`;
+- downsampling/sensitivity: `scripts/local/analysis/downsampling/`;
 - manuscript plotting: `scripts/local/figures/`;
 - reusable helpers: `scripts/utils/`;
 - production HPC workflows: `scripts/hpc/`.
 
-Use descriptive names. Existing numeric prefixes may reflect historical workflow order, but new files should only receive a numeric prefix if their execution order is genuinely important.
+Use descriptive names. Existing numeric prefixes may reflect historical workflow order, but new files should only receive a numeric prefix if their execution order is genuinely important. Do not infer global execution order from prefixes across different analysis subdirectories.
 
 ## Data and Git policy
 
@@ -188,9 +203,10 @@ For every code change, perform the relevant subset of the following checks:
 
 ## Current cleanup conventions
 
-The canonical directory names are:
+Canonical directory names are:
 
 - `scripts/local/processing/` — not `procesing`;
-- `scripts/utils/` — not `utilis`.
+- `scripts/utils/` — not `utilis`;
+- `scripts/local/analysis/todo/` — not `toDo`.
 
-Future code should use only the canonical names.
+Future analysis code should use the domain-specific subdirectories described above rather than accumulating scripts directly in `scripts/local/analysis/`.
