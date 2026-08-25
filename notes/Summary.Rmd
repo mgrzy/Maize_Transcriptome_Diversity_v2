@@ -159,6 +159,55 @@ knitr::include_graphics("../results/figures/supp/Fig_eGene_Prop.png")
 knitr::include_graphics("../results/figures/supp/Fig_eQTL_discoverability.png")
 ```
 
-```{r fig-s7-expression-diagnostics, out.width="100%", fig.cap="Relationship between expression characteristics, narrow-sense expression heritability, and the number of fine-mapped regulatory signals. (A,B) Mean and standard deviation of log2-CPM expression as a function of covariate-adjusted narrow-sense heritability. (C,D) Mean and standard deviation of log2-CPM expression according to the number of fine-mapped SuSiE lead variants per gene."}
+```{r fig-s7-heritability-prediction, fig.width=10, fig.height=4.6, out.width="100%", fig.cap="Expression heritability and predictive contribution of multiple fine-mapped cis-regulatory signals. (A) Covariate-adjusted narrow-sense heritability of gene expression according to the number of SuSiE credible sets identified for each eGene. (B) Held-out test-set predictive R2 of the single-variant OSCA model versus the multi-signal model containing one lead fine-mapped variant per SuSiE credible set. The dashed diagonal denotes equal predictive performance. For consistency with the corresponding analysis in Figure 2, only genes with positive test-set R2 for both models are displayed."}
+suppressPackageStartupMessages({
+  library(data.table)
+  library(ggplot2)
+  library(patchwork)
+})
+
+h2r2 <- fread("../results/summary/Heritability_and_r2/narrow_sense_h2_and_r2.tsv.gz")
+pip_af <- fread("../results/summary/AF/aFCn_MAF_se_filtered.tsv.gz", select = "gene_id")
+
+h2_plot_data <- h2r2[
+  gene %in% unique(pip_af$gene_id) &
+    is.finite(h2_pc_adjusted) &
+    is.finite(osca_r2_test) &
+    is.finite(susie_r2_test) &
+    osca_r2_test > 0 &
+    susie_r2_test > 0 &
+    is.finite(susie_n_variants)
+]
+
+p_h2 <- ggplot(
+  h2_plot_data,
+  aes(x = factor(susie_n_variants), y = h2_pc_adjusted, fill = factor(susie_n_variants))
+) +
+  geom_boxplot(outlier.size = 0.5) +
+  scale_fill_viridis_d(guide = "none") +
+  labs(
+    x = "Number of credible sets",
+    y = "Narrow-sense heritability"
+  ) +
+  theme_classic(base_size = 10)
+
+p_prediction <- ggplot(
+  h2_plot_data,
+  aes(x = osca_r2_test, y = susie_r2_test, colour = factor(susie_n_variants))
+) +
+  geom_point(alpha = 0.65, size = 1.2) +
+  geom_abline(slope = 1, intercept = 0, linetype = 2, colour = "grey50") +
+  scale_colour_viridis_d(name = "N credible sets") +
+  labs(
+    x = expression("Single-variant model " * R^2),
+    y = expression("Multi-signal model " * R^2)
+  ) +
+  theme_classic(base_size = 10) +
+  theme(legend.position = "bottom")
+
+(p_h2 | p_prediction) + plot_annotation(tag_levels = "A")
+```
+
+```{r fig-s8-expression-diagnostics, out.width="100%", fig.cap="Relationship between expression characteristics, narrow-sense expression heritability, and the number of fine-mapped regulatory signals. (A,B) Mean and standard deviation of log2-CPM expression as a function of covariate-adjusted narrow-sense heritability. (C,D) Mean and standard deviation of log2-CPM expression according to the number of fine-mapped SuSiE lead variants per gene."}
 knitr::include_graphics("../results/figures/supp/Fig_SX2_Diag.png")
 ```
