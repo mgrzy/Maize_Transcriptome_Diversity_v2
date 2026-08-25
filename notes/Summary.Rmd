@@ -11,29 +11,6 @@ bibliography: references.bib
 csl: nature.csl
 link-citations: true
 ---
-```{r script setup ,message=FALSE, echo=F}
-# Script setup
-library(tidyverse)
-library(patchwork)
-library(ComplexUpset)
-library(data.table)
-library(dtplyr)
-library(scales)
-library(knitr)
-
-
-base_font_size <- 16
-theme_set(theme_classic(base_size = base_font_size))
-theme_update(
-  axis.text = element_text(colour = "black", size = base_font_size, face = "plain"),
-  axis.title = element_text(size = base_font_size, face = "plain"),
-  axis.ticks = element_line(colour = "black"),
-  legend.title = element_text(size = base_font_size, face = "plain"),
-  legend.text = element_text(size = base_font_size, face = "plain"),
-  plot.tag = element_text(size = base_font_size, face = "plain"),
-  plot.title.position = "plot"
-)
-```  
 
 # Supplementary methods
 
@@ -53,6 +30,93 @@ knitr::include_graphics("../results/figures/supp/Fig_PCA_Var_exp.png")
 ```{r IHW, echo=FALSE, out.width="100%", fig.align='center', fig.cap=" to do"}
 knitr::include_graphics("../results/figures/supp/Fig_IHW.png")
 ```
+
+### Functional annotation and regulatory enrichment
+
+\subsection*{Supplementary Methods S4: Functional annotation and regulatory enrichment}
+
+\subsubsection*{Genomic annotation of fine-mapped eQTL variants}
+
+Functional annotation was performed using one representative variant from each SuSiE credible set, defined as the variant with the highest posterior inclusion probability (PIP) within that set. Gene models were obtained from the B73 RefGen\_v5 annotation (Zm-B73-REFERENCE-NAM-5.0\_Zm00001eb.1) and imported into R using the \texttt{GenomicFeatures}, \texttt{txdbmaker}, and \texttt{GenomicRanges} Bioconductor packages.
+
+Gene bodies, transcripts, exons, coding sequences (CDS), 5$^\prime$ untranslated regions (5$^\prime$ UTRs), 3$^\prime$ untranslated regions (3$^\prime$ UTRs), and introns were derived directly from the genome annotation. Promoter regions were defined relative to transcript-specific TSSs as extending 2,000 bp upstream and 200 bp downstream of the TSS. Overlaps between fine-mapped variants and genomic features were calculated without regard to strand.
+
+Because individual genomic positions can overlap multiple annotations, all binary feature-overlap indicators were retained. In addition, each variant was assigned a single primary genomic annotation for enrichment analyses using the following hierarchical priority:
+
+\[
+5^\prime\mathrm{UTR}
+>
+3^\prime\mathrm{UTR}
+>
+\mathrm{CDS}
+>
+\mathrm{other\ exon}
+>
+\mathrm{promoter}
+>
+\mathrm{intron}
+>
+\mathrm{other\ gene\ body}
+>
+\mathrm{intergenic}.
+\]
+
+Thus, for example, a variant overlapping both a promoter and a 5$^\prime$ UTR was assigned to the 5$^\prime$ UTR category for analyses requiring mutually exclusive annotations.
+
+\subsubsection*{Matched genomic-background enrichment}
+
+Enrichment of fine-mapped eQTL variants within genomic annotation classes was evaluated relative to matched control variants drawn from the complete set of genotyped variants. Controls were restricted to the same $\pm 2$ Mb \textit{cis} window around the TSS of the corresponding target eGene used for eQTL mapping and fine-mapping.
+
+For each fine-mapped signal, candidate control variants were matched according to: (i) target gene, (ii) chromosome, (iii) variant type, classified as SNP or indel, (iv) MAF, and (v) absolute distance from the target-gene TSS. MAF was divided into intervals of width 0.05. Absolute TSS distance was divided into the following intervals: 0--1 kb, 1--2 kb, 2--5 kb, 5--10 kb, 10--25 kb, 25--50 kb, 50--100 kb, 100--250 kb, 250--500 kb, 0.5--1 Mb, and 1--2 Mb. Upstream and downstream variants were treated equivalently on the basis of absolute TSS distance.
+
+The lead fine-mapped variant itself was excluded from its control pool. To limit computational requirements while retaining a large set of possible controls, at most 500 candidate variants were retained for each matching stratum. Fine-mapped signals with fewer than five eligible matched controls were excluded from the genomic-context permutation analysis.
+
+A total of 5,000 permutations was performed. During each permutation, one control variant was sampled independently from the matched pool of every eligible fine-mapped signal. The number of sampled variants belonging to each genomic annotation class was then recorded. The expected number of variants in each category was calculated as the mean count across permutations, and fold enrichment was calculated as
+
+\[
+\mathrm{Fold\ enrichment}
+=
+\frac{N_{\mathrm{observed}}}
+     {\mathrm{mean}(N_{\mathrm{permuted}})}.
+\]
+
+One-sided empirical probabilities for enrichment and depletion were calculated as
+
+\[
+P_{\mathrm{enrichment}}
+=
+\frac{1+\sum(N_{\mathrm{permuted}} \geq N_{\mathrm{observed}})}
+     {1+N_{\mathrm{permutations}}},
+\]
+
+and
+
+\[
+P_{\mathrm{depletion}}
+=
+\frac{1+\sum(N_{\mathrm{permuted}} \leq N_{\mathrm{observed}})}
+     {1+N_{\mathrm{permutations}}}.
+\]
+
+Two-sided empirical $p$-values were calculated as twice the smaller of the enrichment and depletion probabilities, with values constrained to a maximum of 1. Multiple testing across genomic annotation categories was controlled using the Benjamini--Hochberg false discovery rate procedure.
+
+\subsubsection*{Chromatin-accessibility enrichment}
+
+To determine whether fine-mapped eQTL variants preferentially occurred within accessible regulatory chromatin, variant positions were intersected with published maize leaf ATAC-seq peaks [REF]. Chromatin interval files were converted to B73 RefGen\_v5 coordinates where required, chromosome identifiers were standardized, and BED-format coordinates were converted from 0-based, half-open intervals to the 1-based coordinate system used for variant positions.
+
+Enrichment within ATAC-seq peaks was assessed using the same general matched-permutation strategy as for genomic annotations. Candidate control variants were drawn from the $\pm 2$ Mb \textit{cis} region of the corresponding target gene and matched according to MAF, absolute TSS distance, and variant type. The same MAF and TSS-distance bins described above were used. Fine-mapped variants were excluded from the control pool.
+
+For each of 5,000 permutations, one eligible matched control was sampled for every fine-mapped variant, and overlap with ATAC-seq peaks was recorded. Fold enrichment and empirical $p$-values were calculated from the resulting permutation distribution.
+
+\subsubsection*{Transcription-factor ChIP-seq enrichment}
+
+Transcription-factor occupancy was evaluated using published ChIP-seq data for 104 maize transcription factors [REF]. Replicate-supported consensus peaks were generated for each transcription factor and represented in B73 RefGen\_v5 coordinates. Enrichment was evaluated independently for each transcription factor.
+
+Because fine-mapped eQTL variants were themselves enriched within accessible chromatin, transcription-factor-binding enrichment was tested conditional on general chromatin accessibility. Candidate control variants were therefore matched to each fine-mapped variant according to MAF, absolute distance from the target-gene TSS, variant type, and binary overlap status with leaf ATAC-seq peaks. Consequently, an ATAC-positive fine-mapped variant was compared only with ATAC-positive controls, whereas an ATAC-negative variant was compared with ATAC-negative controls.
+
+Exact matching used MAF bins of width 0.05 and the TSS-distance intervals described above. For signals with no eligible control under the exact matching criteria, the candidate pool was progressively expanded to adjacent MAF and TSS-distance bins. The matching tier used for each fine-mapped variant was retained for quality-control purposes. Fine-mapped variants for which no eligible control could be identified after local expansion were excluded from the permutation test.
+
+For each transcription factor, 5,000 permutations were performed by independently sampling one matched control for every eligible fine-mapped variant. The number of variants overlapping ChIP-seq peaks for the corresponding transcription factor was calculated for each permutation and compared with the observed overlap. Fold enrichment and empirical $p$-values were calculated from these permutation distributions. Multiple testing across transcription factors was controlled using the Benjamini--Hochberg false discovery rate procedure.
 
 # Supplementary figures
 
