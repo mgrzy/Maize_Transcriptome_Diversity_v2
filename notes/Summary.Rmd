@@ -4,38 +4,63 @@ output:
   pdf_document:
     toc: true
     toc_depth: 3
-    number_sections: true
+    number_sections: false
+    fig_caption: true
 header-includes:
   - \usepackage{float}
+  - \floatplacement{figure}{H}
+  - \renewcommand{\figurename}{Supplementary Figure}
+  - \renewcommand{\thefigure}{S\arabic{figure}}
 bibliography: references.bib
 csl: nature.csl
 link-citations: true
 ---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(
+  echo = FALSE,
+  fig.align = "center",
+  fig.pos = "H"
+)
+```
+
 # Supplementary methods
 
-### Normalized expression matrix
+## Supplementary Methods S1: Expression normalization and variance stabilization
 
-```{r varStab, echo=FALSE, out.width="80%", fig.align='center', fig.cap=" to do"}
+Gene-level RNA-seq counts were restricted to samples that could be matched to genotyped WiDiv lines. Genes with insufficient expression were removed using \texttt{edgeR::filterByExpr}. Library-size normalization factors were then estimated using the trimmed mean of M-values (TMM) method, and normalized expression was calculated as log$_2$ counts per million (log$_2$-CPM) using \texttt{edgeR}, with a prior count of 2. Where more than one RNA-seq profile was available for the same genotype, normalized expression values were averaged to obtain one expression profile per line. The resulting filtered log$_2$-CPM matrix was used as the expression phenotype for the primary \textit{cis}-eQTL analysis.
+
+As a normalization diagnostic, the relationship between gene-wise mean expression and standard deviation was compared for raw counts, TMM-normalized log$_2$-CPM values, and a DESeq2 variance-stabilizing transformation (VST) calculated on the same filtered gene set. The log$_2$-CPM and VST transformations both substantially reduced the strong mean--variance dependence present in raw counts, supporting the use of normalized expression values for downstream quantitative analyses.
+
+```{r fig-s1-normalization, out.width="95%", fig.cap="Effect of expression normalization on the gene-wise mean--variance relationship. Gene-wise mean expression and standard deviation are shown for (A) raw counts, (B) TMM-normalized log2-CPM values used for the primary eQTL analysis, and (C) DESeq2 variance-stabilized expression values. Smooth curves summarize the mean--variance relationship."}
 knitr::include_graphics("../results/figures/supp/Fig_GeneExpressionVaraianceNorm.png")
 ```
-### Selection covariance for \textit{cis}-eQTL mapping
 
-```{r PCA-select, echo=FALSE, out.width="60%", fig.align='center', fig.cap=" to do"}
+## Supplementary Methods S2: Selection of covariates for \textit{cis}-eQTL mapping
+
+Latent expression covariates were selected by principal component analysis (PCA) of the filtered log$_2$-CPM expression matrix. Expression values were centered and scaled before PCA. The number of expression principal components (PCs) was evaluated using the elbow and Buja--Eyuboglu procedures implemented in \texttt{PCAForQTL}; the first 10 expression PCs were retained for the primary eQTL model.
+
+Potential redundancy between expression PCs and measured biological or genetic covariates was evaluated using the \texttt{filterKnownCovariates} procedure in \texttt{PCAForQTL}. Candidate known covariates comprised flowering time and the first five genetic PCs. Missing flowering-time values were replaced by the panel mean before this analysis. Known covariates with more than 90\% of their variance explained by the selected expression PCs ($R^2>0.9$) were removed to avoid redundant adjustment. Two genetic PCs met this criterion and were excluded. Flowering time and the remaining three genetic PCs were retained together with the first 10 expression PCs, giving 14 fixed-effect covariates in the primary eQTL model. Expression PCs and flowering time were standardized before construction of the OSCA covariate matrix.
+
+```{r fig-s2-covariates, out.width="75%", fig.cap="Selection of expression principal components for cis-eQTL mapping. The scree plot summarizes variance captured by expression PCs and the PC-number estimates obtained using the elbow and Buja--Eyuboglu procedures. Ten expression PCs were retained in the primary eQTL model."}
 knitr::include_graphics("../results/figures/supp/Fig_PCA_Var_exp.png")
 ```
 
-### IHW
+## Supplementary Methods S3: IHW diagnostics and multiple-testing adjustment
 
-```{r IHW, echo=FALSE, out.width="100%", fig.align='center', fig.cap=" to do"}
+Absolute distance between each tested variant and the transcription start site (TSS) of its target gene was used as the informative covariate for Independent Hypothesis Weighting (IHW). Before the final analysis, both absolute TSS distance and minor allele frequency (MAF) were evaluated as candidate IHW covariates by examining their relationship with association strength and by inspecting p-value distributions within covariate strata. For these diagnostics, the $\pm2$ Mb \textit{cis} search interval was divided into ten equal-width TSS-distance groups and the MAF range from 0 to 0.5 into ten equal-width groups. P-value histograms were additionally examined within the putative null tail ($P\geq0.05$) to assess the suitability of the covariates under the null hypothesis. TSS distance was retained as the IHW covariate for the primary analysis.
+
+Because the complete eQTL analysis contained tens of millions of association tests, IHW was implemented using an incomplete p-value list. Association results with $P\leq10^{-3}$ were retained explicitly, while the total number of tests in each of the ten TSS-distance groups was calculated from the complete OSCA output and supplied to IHW through the group-size argument. This preserves the full number of hypotheses represented by each covariate stratum while avoiding storage of the large number of clearly non-significant p-values. Exact numerical zeros in the OSCA output were replaced by $10^{-300}$ before analysis.
+
+IHW was run at a target false discovery rate of 1\%, treating TSS-distance groups as an ordinal covariate. Benjamini--Hochberg adjustment was used within the IHW framework with fivefold cross-validation and a fixed random seed of 1. Associations with IHW-adjusted $P<0.01$ were retained as significant \textit{cis}-eQTLs.
+
+```{r fig-s3-ihw, out.width="100%", fig.cap="Diagnostics for selection of the IHW covariate. (A) Association strength as a function of absolute distance to the target-gene TSS and minor allele frequency. (B) Number of tested associations across the ten TSS-distance groups used for IHW. (C) P-value distributions across TSS-distance groups, used to assess the behavior of the covariate under the null and alternative hypotheses."}
 knitr::include_graphics("../results/figures/supp/Fig_IHW.png")
 ```
 
-### Functional annotation and regulatory enrichment
+## Supplementary Methods S4: Functional annotation and regulatory enrichment
 
-\subsection*{Supplementary Methods S4: Functional annotation and regulatory enrichment}
-
-\subsubsection*{Genomic annotation of fine-mapped eQTL variants}
+### Genomic annotation of fine-mapped eQTL variants
 
 Functional annotation was performed using one representative variant from each SuSiE credible set, defined as the variant with the highest posterior inclusion probability (PIP) within that set. Gene models were obtained from the B73 RefGen\_v5 annotation (Zm-B73-REFERENCE-NAM-5.0\_Zm00001eb.1) and imported into R using the \texttt{GenomicFeatures}, \texttt{txdbmaker}, and \texttt{GenomicRanges} Bioconductor packages.
 
@@ -63,15 +88,15 @@ Because individual genomic positions can overlap multiple annotations, all binar
 
 Thus, for example, a variant overlapping both a promoter and a 5$^\prime$ UTR was assigned to the 5$^\prime$ UTR category for analyses requiring mutually exclusive annotations.
 
-\subsubsection*{Matched genomic-background enrichment}
+### Matched genomic-background enrichment
 
-Enrichment of fine-mapped eQTL variants within genomic annotation classes was evaluated relative to matched control variants drawn from the complete set of genotyped variants. Controls were restricted to the same $\pm 2$ Mb \textit{cis} window around the TSS of the corresponding target eGene used for eQTL mapping and fine-mapping.
+Enrichment of fine-mapped eQTL variants within genomic annotation classes was evaluated relative to matched control variants drawn from the complete set of genotyped variants. Controls were restricted to the same $\pm2$ Mb \textit{cis} window around the TSS of the corresponding target eGene used for eQTL mapping and fine-mapping.
 
-For each fine-mapped signal, candidate control variants were matched according to: (i) target gene, (ii) chromosome, (iii) variant type, classified as SNP or indel, (iv) MAF, and (v) absolute distance from the target-gene TSS. MAF was divided into intervals of width 0.05. Absolute TSS distance was divided into the following intervals: 0--1 kb, 1--2 kb, 2--5 kb, 5--10 kb, 10--25 kb, 25--50 kb, 50--100 kb, 100--250 kb, 250--500 kb, 0.5--1 Mb, and 1--2 Mb. Upstream and downstream variants were treated equivalently on the basis of absolute TSS distance.
+For each fine-mapped signal, candidate control variants were matched according to target gene, variant type (SNP or indel), MAF, and absolute distance from the target-gene TSS. MAF was divided into intervals of width 0.05. Absolute TSS distance was divided into the following intervals: 0--1 kb, 1--2 kb, 2--5 kb, 5--10 kb, 10--25 kb, 25--50 kb, 50--100 kb, 100--250 kb, 250--500 kb, 0.5--1 Mb, and 1--2 Mb. Upstream and downstream variants were treated equivalently on the basis of absolute TSS distance.
 
-The lead fine-mapped variant itself was excluded from its control pool. To limit computational requirements while retaining a large set of possible controls, at most 500 candidate variants were retained for each matching stratum. Fine-mapped signals with fewer than five eligible matched controls were excluded from the genomic-context permutation analysis.
+The fine-mapped lead variant itself was excluded from its control pool. To limit computational requirements while retaining a large candidate set, at most 500 candidate variants were retained per matching stratum. Fine-mapped signals with fewer than five eligible matched controls were excluded from the genomic-context permutation analysis.
 
-A total of 5,000 permutations was performed. During each permutation, one control variant was sampled independently from the matched pool of every eligible fine-mapped signal. The number of sampled variants belonging to each genomic annotation class was then recorded. The expected number of variants in each category was calculated as the mean count across permutations, and fold enrichment was calculated as
+A total of 5,000 permutations was performed. During each permutation, one control variant was sampled independently from the matched pool of every eligible fine-mapped signal. The number of sampled variants belonging to each genomic annotation class was recorded. The expected number of variants in each category was calculated as the mean count across permutations, and fold enrichment was calculated as
 
 \[
 \mathrm{Fold\ enrichment}
@@ -100,38 +125,40 @@ P_{\mathrm{depletion}}
 
 Two-sided empirical $p$-values were calculated as twice the smaller of the enrichment and depletion probabilities, with values constrained to a maximum of 1. Multiple testing across genomic annotation categories was controlled using the Benjamini--Hochberg false discovery rate procedure.
 
-\subsubsection*{Chromatin-accessibility enrichment}
+### Chromatin-accessibility enrichment
 
-To determine whether fine-mapped eQTL variants preferentially occurred within accessible regulatory chromatin, variant positions were intersected with published maize leaf ATAC-seq peaks [REF]. Chromatin interval files were converted to B73 RefGen\_v5 coordinates where required, chromosome identifiers were standardized, and BED-format coordinates were converted from 0-based, half-open intervals to the 1-based coordinate system used for variant positions.
+BED files containing published maize chromatin-accessibility peaks were downloaded from the MaizeGDB website [REF]. The downloaded peak coordinates corresponded to the B73 RefGen\_v5 genome assembly. Chromosome identifiers were standardized before analysis, and BED coordinates were converted from the 0-based, half-open BED convention to the 1-based coordinate system used for variant positions. Fine-mapped variant positions were intersected with leaf ATAC-seq peaks using \texttt{GenomicRanges}.
 
-Enrichment within ATAC-seq peaks was assessed using the same general matched-permutation strategy as for genomic annotations. Candidate control variants were drawn from the $\pm 2$ Mb \textit{cis} region of the corresponding target gene and matched according to MAF, absolute TSS distance, and variant type. The same MAF and TSS-distance bins described above were used. Fine-mapped variants were excluded from the control pool.
+Enrichment within accessible chromatin was assessed using the same general matched-permutation strategy as for genomic annotations. Candidate control variants were drawn from the $\pm2$ Mb \textit{cis} region of the corresponding target gene and matched according to MAF, absolute TSS distance, and variant type. The same MAF and TSS-distance bins described above were used, and fine-mapped variants were excluded from the control pool. For sparse matching strata, candidate pools were progressively expanded to adjacent MAF and TSS-distance bins; the matching tier used for each signal was retained for quality-control purposes.
 
 For each of 5,000 permutations, one eligible matched control was sampled for every fine-mapped variant, and overlap with ATAC-seq peaks was recorded. Fold enrichment and empirical $p$-values were calculated from the resulting permutation distribution.
 
-\subsubsection*{Transcription-factor ChIP-seq enrichment}
+### Transcription-factor ChIP-seq enrichment
 
-Transcription-factor occupancy was evaluated using published ChIP-seq data for 104 maize transcription factors [REF]. Replicate-supported consensus peaks were generated for each transcription factor and represented in B73 RefGen\_v5 coordinates. Enrichment was evaluated independently for each transcription factor.
+BED files containing published maize transcription-factor ChIP-seq peaks were downloaded from the MaizeGDB website [REF]. The dataset comprised replicate-supported consensus peaks for 104 maize transcription factors represented in B73 RefGen\_v5 coordinates. Chromosome identifiers and BED coordinates were standardized as described above, and enrichment was evaluated independently for each transcription factor.
 
 Because fine-mapped eQTL variants were themselves enriched within accessible chromatin, transcription-factor-binding enrichment was tested conditional on general chromatin accessibility. Candidate control variants were therefore matched to each fine-mapped variant according to MAF, absolute distance from the target-gene TSS, variant type, and binary overlap status with leaf ATAC-seq peaks. Consequently, an ATAC-positive fine-mapped variant was compared only with ATAC-positive controls, whereas an ATAC-negative variant was compared with ATAC-negative controls.
 
-Exact matching used MAF bins of width 0.05 and the TSS-distance intervals described above. For signals with no eligible control under the exact matching criteria, the candidate pool was progressively expanded to adjacent MAF and TSS-distance bins. The matching tier used for each fine-mapped variant was retained for quality-control purposes. Fine-mapped variants for which no eligible control could be identified after local expansion were excluded from the permutation test.
+Exact matching used MAF bins of width 0.05 and the TSS-distance intervals described above. For signals without an eligible control under the exact matching criteria, the candidate pool was progressively expanded to adjacent MAF and TSS-distance bins. Fine-mapped variants for which no eligible control could be identified after local expansion were excluded from the permutation test.
 
 For each transcription factor, 5,000 permutations were performed by independently sampling one matched control for every eligible fine-mapped variant. The number of variants overlapping ChIP-seq peaks for the corresponding transcription factor was calculated for each permutation and compared with the observed overlap. Fold enrichment and empirical $p$-values were calculated from these permutation distributions. Multiple testing across transcription factors was controlled using the Benjamini--Hochberg false discovery rate procedure.
 
+\clearpage
+
 # Supplementary figures
 
-```{r PCA-all-lines, echo=FALSE, out.width="80%", fig.align='center', fig.cap=" to do"}
+```{r fig-s4-genetic-pca, out.width="85%", fig.cap="Genetic principal component analysis of WiDiv lines in the context of broader Zea diversity. (A) PC1 versus PC2 and (B) PC2 versus PC3. WiDiv accessions are highlighted relative to maize, teosinte, and other maize relatives in the broader diversity panel."}
 knitr::include_graphics("../results/figures/supp/Fig_PCA_All.png")
 ```
 
-```{r eGene-prop, echo=FALSE, out.width="100%", fig.align='center', fig.cap=" to do"}
+```{r fig-s5-egene-proportion, out.width="100%", fig.cap="Summary of cis-eQTL discovery in the WiDiv panel, showing the proportion of expressed genes classified as eGenes under the primary association-mapping procedure."}
 knitr::include_graphics("../results/figures/supp/Fig_eGene_Prop.png")
 ```
 
-```{r disc, echo=FALSE, out.width="100%", fig.align='center', fig.cap=" to do"}
+```{r fig-s6-discoverability, out.width="100%", fig.cap="Effect of sample size on cis-eQTL discovery. Stratified downsampling of the WiDiv panel was used to quantify the number of genes with at least one significant cis-eQTL across progressively larger sample sizes."}
 knitr::include_graphics("../results/figures/supp/Fig_eQTL_discoverability.png")
 ```
 
-```{r fm-prop, echo=FALSE, out.width="100%", fig.align='center', fig.cap=" to do"}
+```{r fig-s7-expression-diagnostics, out.width="100%", fig.cap="Relationship between expression characteristics, narrow-sense expression heritability, and the number of fine-mapped regulatory signals. (A,B) Mean and standard deviation of log2-CPM expression as a function of covariate-adjusted narrow-sense heritability. (C,D) Mean and standard deviation of log2-CPM expression according to the number of fine-mapped SuSiE lead variants per gene."}
 knitr::include_graphics("../results/figures/supp/Fig_SX2_Diag.png")
 ```
