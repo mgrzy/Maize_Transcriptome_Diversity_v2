@@ -85,7 +85,7 @@ figure <- ggplot(plot_data, aes(x = heritability, colour = estimate, fill = esti
     fill = NULL
   ) +
   coord_cartesian(xlim = c(0, 1)) +
-  theme_classic(base_size = 11) +
+  theme_classic(base_size = 8) +
   theme(legend.position = "top")
 
 dir.create(dirname(config$output), recursive = TRUE, showWarnings = FALSE)

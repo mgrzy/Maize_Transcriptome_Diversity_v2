@@ -60,7 +60,7 @@ ggsave(
   units = "cm"
 )
 ggsave(
-  filename = "results/figures/Supp/Fig_PCA_All.pdf",
+  filename = "results/figures/supp/Fig_PCA_All.pdf",
   plot = combined_plot,
   width = 18,
   height = 9,

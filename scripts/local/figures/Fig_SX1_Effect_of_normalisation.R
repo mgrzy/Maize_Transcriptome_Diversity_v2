@@ -3,7 +3,7 @@ library(data.table)
 library(scales)
 library(patchwork)
 
-base_font_size <- 16
+base_font_size <- 8
 theme_set(theme_classic(base_size = base_font_size))
 theme_update(
   axis.text = element_text(colour = "black", size = base_font_size, face = "plain"),

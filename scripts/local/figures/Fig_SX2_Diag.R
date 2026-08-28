@@ -64,7 +64,7 @@ plot_data <- plot_data[
 if (!nrow(plot_data)) stop_with("No complete genes remain after joining the two diagnostic inputs.")
 if (any(plot_data$susie_n_variants < 0L)) stop_with("susie_n_variants contains negative values.")
 
-theme_set(theme_classic(base_size = 10))
+theme_set(theme_classic(base_size = 8))
 panel_theme <- theme(
   axis.text = element_text(colour = "black"),
   plot.margin = margin(5.5, 5.5, 5.5, 5.5)
@@ -124,7 +124,7 @@ p_variant_sd <- make_variant_count_panel("expression_sd_log2_cpm", "Expression S
 
 figure <- (p_h2_mean | p_h2_sd) / (p_variant_mean | p_variant_sd) +
   plot_annotation(tag_levels = "A") &
-  theme(plot.tag = element_text(face = "bold", size = 12))
+  theme(plot.tag = element_text(face = "bold", size = 8))
 
 print(figure)
 ggsave(cfg$output_file, figure, width = 8.6, height = 6.5, units = "in", dpi = 400)

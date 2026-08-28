@@ -14,6 +14,9 @@
 library(tidyverse)
 library(PCAForQTL)
 
+base_font_size <- 8
+theme_set(theme_classic(base_size = base_font_size))
+
 ### Load data
 dat <- data.table::fread("data/processed/rna/counts_NE2020_corrected_names_log2_cpm_filtered.csv.gz", data.table = F)
 
@@ -21,7 +24,7 @@ dat <- data.table::fread("data/processed/rna/counts_NE2020_corrected_names_log2_
 genoPC <- bigmemory::attach.big.matrix("data/processed/geno/rMVP/Dib639_MAF005.pc.desc")[]
 colnames(genoPC) <- c("PC_G1", "PC_G2", "PC_G3", "PC_G4", "PC_G5")
 
-blup <- fread("data/raw/meta/BLUP2020.csv")
+blup <- data.table::fread("data/raw/meta/BLUP2020.csv")
 
 ### 
 know.cov <- data.frame(Taxa=dat$Line, genoPC)
@@ -48,14 +51,6 @@ K_elbow <- resElbow
 K_BE <- resBE$numOfPCsChosen
 
 ### Scree plot
-resPCA <- summary(resPCA)
-
-im <- t(resPCA$importance)
-
-im <- data.frame(im)
-
-im$idx <- 1:631
-
 makeScreePlot(resPCA, labels = c("Elbow", "BE"), values = c(K_elbow, K_BE), maxNumOfPCsToPlot = 150)
 
 ggsave(
@@ -63,4 +58,3 @@ ggsave(
   width = 12,
   height = 6,
 )
-
