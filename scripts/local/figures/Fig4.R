@@ -380,25 +380,9 @@ geno <- attach.big.matrix(cfg$geno_descriptor)
 dosage <- as.data.frame(geno[, idx, drop = FALSE]); names(dosage) <- fine$SNP
 geno_samples <- bind_cols(ind, dosage) %>% inner_join(sample_data, by = "Line")
 
-allele_freq <- geno_samples %>% pivot_longer(all_of(fine$SNP), names_to = "SNP", values_to = "dosage") %>%
-  group_by(Group, SNP) %>% summarise(alt_frequency = mean(as.numeric(dosage) / 2, na.rm = TRUE), .groups = "drop") %>%
-  mutate(Group = factor(Group, levels = groups), SNP = factor(SNP, levels = fine$SNP))
-
-major_minor_frequency <- allele_freq %>%
-  transmute(Group, SNP, `Alternative allele` = alt_frequency, `Major allele` = 1 - alt_frequency) %>%
-  pivot_longer(c(`Major allele`, `Alternative allele`), names_to = "allele", values_to = "frequency") %>%
-  mutate(
-    allele = factor(allele, levels = c("Major allele", "Alternative allele")),
-    SNP_position = sub("^chr[^_]+_", "", as.character(SNP))
-  )
-stacked_allele_plot <- ggplot(major_minor_frequency, aes(Group, frequency, fill = allele)) +
-  geom_col(width = .72) + facet_wrap(~SNP_position, nrow = 1) +
-  scale_fill_manual(values = c("Major allele" = "grey75", "Alternative allele" = "#D55E00")) +
-  scale_y_continuous(limits = c(0, 1)) + labs(x = NULL, y = "Allele frequency", fill = NULL) +
-  theme_classic(base_size = 8) +
-  theme(axis.text.x = element_text(angle = 30, hjust = 1, size = 6), legend.position = "none")
-
-hap_data <- geno_samples %>% mutate(haplotype = apply(select(., all_of(fine$SNP)), 1, paste, collapse = "/"))
+hap_data <- geno_samples %>%
+  filter(if_all(all_of(fine$SNP), ~ !is.na(.))) %>%
+  mutate(haplotype = apply(select(., all_of(fine$SNP)), 1, paste, collapse = "/"))
 top_haps <- hap_data %>% count(haplotype, sort = TRUE) %>% slice_head(n = 4) %>% pull(haplotype)
 hap_order <- hap_data %>%
   filter(haplotype %in% top_haps) %>%
@@ -409,6 +393,31 @@ hap_order <- hap_data %>%
 hap_data <- hap_data %>% filter(haplotype %in% hap_order) %>%
   mutate(haplotype = factor(haplotype, levels = hap_order))
 
+haplotype_frequency_data <- geno_samples %>%
+  filter(if_all(all_of(fine$SNP), ~ !is.na(.))) %>%
+  mutate(
+    haplotype = apply(select(., all_of(fine$SNP)), 1, paste, collapse = "/"),
+    haplotype = if_else(haplotype %in% hap_order, haplotype, "Other"),
+    haplotype = factor(haplotype, levels = c(hap_order, "Other"))
+  ) %>%
+  count(Group, haplotype, name = "n_lines") %>%
+  group_by(Group) %>%
+  mutate(frequency = n_lines / sum(n_lines)) %>%
+  ungroup() %>%
+  mutate(Group = factor(Group, levels = groups))
+
+haplotype_colours <- setNames(myPal[seq_along(c(hap_order, "Other"))], c(hap_order, "Other"))
+haplotype_frequency_plot <- ggplot(haplotype_frequency_data, aes(Group, frequency, fill = haplotype)) +
+  geom_col(width = .72, colour = "grey25", linewidth = 0.2) +
+  scale_fill_manual(values = haplotype_colours, name = "Three-SNP\nhaplotype") +
+  scale_y_continuous(labels = scales::percent, limits = c(0, 1)) +
+  labs(x = NULL, y = "Haplotype frequency") +
+  theme_classic(base_size = 8) +
+  theme(
+    axis.text.x = element_text(angle = 30, hjust = 1, size = 6),
+    legend.position = "none"
+  )
+
 haplotype_effect_plot <- ggplot(hap_data, aes(haplotype, expression_log2_cpm, fill = haplotype)) +
   geom_boxplot(width = .7, outlier.size = .4) +
   geom_jitter(width = .14, size = .55, alpha = .4, colour = "grey20") +
@@ -418,7 +427,7 @@ haplotype_effect_plot <- ggplot(hap_data, aes(haplotype, expression_log2_cpm, fi
   theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 6))
 
 example_manhattan <- manhattan_plot / gene_track_plot + plot_layout(heights = c(5, 1))
-example_panels <- group_effect_plot + example_manhattan + stacked_allele_plot + haplotype_effect_plot +
+example_panels <- group_effect_plot + example_manhattan + haplotype_frequency_plot + haplotype_effect_plot +
   plot_layout(widths = c(1, 2, 1, 1))
 ###
 

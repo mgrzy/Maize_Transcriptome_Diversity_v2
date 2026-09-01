@@ -88,19 +88,25 @@ g4 <- ggplot(h2r2, aes(as.factor(susie_n_variants), h2_pc_adjusted, fill=as.fact
   scale_fill_viridis_d(name="N causal sets") +
   theme(legend.position = "none")
   
-g5 <- ggplot(h2r2, aes(osca_r2_test, susie_r2_test, colour=as.factor(susie_n_variants))) + 
-  geom_point(alpha = 0.65) +
+g5 <- ggplot(h2r2, aes(osca_r2_test, susie_r2_test)) +
   geom_abline(slope = 1, linetype = 2, colour = "gray50") + 
+  geom_hex(bins = 45) +
+  scale_fill_viridis_c(
+    name = "Number of genes",
+    trans = "log10",
+    guide = guide_colourbar(
+      barheight = grid::unit(12, "mm"),
+      barwidth = grid::unit(2.5, "mm")
+    )
+  ) +
   xlab(expression(Singe~variant~model~(italic(R^2)))) + 
-  ylab(expression(Multiple~variant~model~(italic(R^2)))) + 
-  scale_color_viridis_d(name="N causal sets") +
-  guides(colour = guide_legend(ncol = 2)) +
+  ylab(expression(Multiple~variant~model~(italic(R^2)))) +
   theme(
     legend.position = "inside",
     legend.position.inside = c(0.98, 0.02),
     legend.justification = c(1, 0),
-    legend.title = element_text(size = 4),
-    legend.text = element_text(size = 3)
+    legend.title = element_text(size = 5),
+    legend.text = element_text(size = 4)
   )
 
 g6 <- ggplot(
