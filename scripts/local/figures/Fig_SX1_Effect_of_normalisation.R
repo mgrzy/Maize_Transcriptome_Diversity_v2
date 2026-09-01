@@ -3,7 +3,7 @@ library(data.table)
 library(scales)
 library(patchwork)
 
-base_font_size <- 8
+base_font_size <- 9
 theme_set(theme_classic(base_size = base_font_size))
 theme_update(
   axis.text = element_text(colour = "black", size = base_font_size, face = "plain"),
@@ -53,4 +53,6 @@ ggsave(
   plot = combined_plot,
   width = 21,
   height = 6,
+  units = "cm",
+  dpi = 300
 )

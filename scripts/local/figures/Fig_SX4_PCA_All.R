@@ -9,7 +9,7 @@ library(ggsci)
 library(ggnewscale)
 
 # Match main figure styling
-base_font_size <- 8
+base_font_size <- 9
 theme_set(theme_classic(base_size = base_font_size))
 theme_update(
   axis.title = element_text(size = rel(1.15)),

@@ -6,7 +6,7 @@ suppressPackageStartupMessages({
 })
 
 # Consistent styling for the merged figure
-base_font_size <- 8
+base_font_size <- 9
 theme_set(theme_classic(base_size = base_font_size))
 # Harmonize global font sizing with Fig5.R: only set axis text colour
 theme_update(
@@ -67,6 +67,8 @@ ggsave(plot = gall,
   filename = "results/figures/supp/Fig_eGene_Prop.png", 
   width = 21,
   height = 6,
+  units = "cm",
+  dpi = 300
 )
 
 ###

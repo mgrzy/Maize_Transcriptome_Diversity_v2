@@ -174,3 +174,11 @@ knitr::include_graphics("../results/figures/supp/Fig_Heritability_density.png")
 ```{r fig-s8-expression-diagnostics, out.width="100%", fig.cap="Relationship between expression characteristics, narrow-sense expression heritability, and the number of fine-mapped regulatory signals. (A,B) Mean and standard deviation of log2-CPM expression as a function of covariate-adjusted narrow-sense heritability. (C,D) Mean and standard deviation of log2-CPM expression according to the number of fine-mapped SuSiE lead variants per gene."}
 knitr::include_graphics("../results/figures/supp/Fig_SX2_Diag.png")
 ```
+
+```{r fig-s9-delta-r2-by-credible-set-size, out.width="75%", fig.cap="Difference in held-out prediction performance between SuSiE and OSCA across SuSiE credible-set sizes. Delta R2 is calculated as SuSiE test R2 minus OSCA test R2; positive values indicate better held-out prediction by SuSiE. Boxplot statistics use all genes, while the displayed y-axis range is limited to the central 99% of Delta R2 values to show the distributions around zero."}
+knitr::include_graphics("../results/figures/supp/Fig_Delta_R2_by_SuSiE_credible_set_size.png")
+```
+
+```{r fig-s10-tf-enrichment-by-functional-class, out.width="80%", fig.cap="Fine-mapped cis-eQTL enrichment in consensus ChIP-seq peaks for all 104 maize transcription factors. Transcription factors are grouped according to the eight functional paper classes used in Figure 3. Open points show enrichment relative to standard matched controls; blue points show enrichment relative to controls additionally matched for leaf chromatin accessibility. Lines connect estimates for the same transcription factor; the dashed line denotes no enrichment."}
+knitr::include_graphics("../results/figures/supp/FigS_TF_enrichment_all_104_by_functional_class.png")
+```

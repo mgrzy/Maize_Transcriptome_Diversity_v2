@@ -22,7 +22,7 @@ plot_width <- 13
 density_plot_height <- 5.5
 histogram_plot_height <- 10
 plot_dpi <- 300
-base_font_size <- 8
+base_font_size <- 9
 
 ## =============================================================================
 ## 2. Load saved tables

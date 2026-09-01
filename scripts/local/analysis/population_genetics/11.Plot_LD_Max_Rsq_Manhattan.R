@@ -75,7 +75,7 @@ make_manhattan_plot <- function(metric, y_label) {
     ) +
     ggplot2::scale_y_continuous(limits = c(0, NA), expand = ggplot2::expansion(mult = c(0, 0.03))) +
     ggplot2::labs(x = "Chromosome", y = y_label) +
-    ggplot2::theme_classic(base_size = 8) +
+    ggplot2::theme_classic(base_size = 9) +
     ggplot2::theme(axis.line.x = ggplot2::element_blank(), axis.ticks.x = ggplot2::element_blank())
 }
 
