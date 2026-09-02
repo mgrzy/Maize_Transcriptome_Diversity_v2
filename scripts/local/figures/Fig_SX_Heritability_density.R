@@ -76,8 +76,8 @@ figure <- ggplot(plot_data, aes(x = heritability, colour = estimate, fill = esti
     linewidth = 0.65,
     show.legend = FALSE
   ) +
-  scale_colour_manual(values = c("Raw" = "#4C78A8", "PC-covariate adjusted" = "#E45756")) +
-  scale_fill_manual(values = c("Raw" = "#4C78A8", "PC-covariate adjusted" = "#E45756")) +
+  scale_colour_manual(values = c("Raw" = "#66C5CC", "PC-covariate adjusted" = "#F6CF71")) +
+  scale_fill_manual(values = c("Raw" = "#66C5CC", "PC-covariate adjusted" = "#F6CF71")) +
   labs(
     x = "Narrow-sense heritability (h²)",
     y = "Density",

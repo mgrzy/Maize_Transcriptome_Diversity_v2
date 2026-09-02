@@ -38,8 +38,8 @@ comparison_labels <- c(
   "SS_vs_Tropical" = "SS vs Tropical",
   "NSS_vs_Tropical" = "NSS vs Tropical",
   "Iodent_vs_Tropical" = "Iodent vs Tropical",
-  "Public_SS_vs_NSS" = "Public: SS vs NSS",
-  "exPVP_SS_vs_NSS" = "exPVP: SS vs NSS"
+  "Public_SS_vs_NSS" = "Era I: SS vs NSS",
+  "exPVP_SS_vs_NSS" = "Era II: SS vs NSS"
 )
 myPal <- c("#66C5CC", "#F6CF71", "#DCB0F2", "#87C55F", "#9EB9F3", "#C3B091")
 comparison_colours <- setNames(myPal[seq_along(comparison_labels)], unname(comparison_labels))

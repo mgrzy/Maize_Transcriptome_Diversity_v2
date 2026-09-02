@@ -54,8 +54,7 @@ figure <- ggplot(plot_data, aes(x = credible_set_size, y = delta_r2, fill = cred
   scale_fill_viridis_d(name = "N causal sets", guide = "none") +
   labs(
     x = "Number of variants in SuSiE credible set\n(number of genes below each category)",
-    y = expression(Delta * R^2 * " (SuSiE test " * R^2 * " - OSCA test " * R^2 * ")"),
-    caption = "Display range is the central 99% of ΔR² values; boxplot statistics use all genes."
+    y = expression(Delta * R^2)
   ) +
   coord_cartesian(ylim = display_limits) +
   theme_classic(base_size = 9) +

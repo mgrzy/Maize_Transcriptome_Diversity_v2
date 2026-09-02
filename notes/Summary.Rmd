@@ -1,5 +1,6 @@
 ---
-title: "Maize Transcriptome Diversity"
+title: "Haplotype-rich *cis*-regulation underlies transcriptomic diversity across the breeding history of maize (*Zea mays*)"
+author: Marcin Grzybowski, James Schnable 
 output:
   pdf_document:
     toc: true
@@ -28,7 +29,7 @@ knitr::opts_chunk$set(
 
 ## Supplementary Methods S1: Expression normalization and variance stabilization
 
-Gene-level RNA-seq counts were restricted to samples that could be matched to genotyped Wisconsin Diversity Panel lines. Lowly expressed genes were removed using \texttt{edgeR::filterByExpr}. Library-size normalization factors were subsequently estimated using the trimmed mean of M-values (TMM) method, and expression values were converted to log$_2$ counts per million (log$_2$-CPM) using \texttt{edgeR}, with a prior count of 2 [@edgeR]. The log$_2$ transformation compresses the dynamic range of RNA-seq expression values, reducing the disproportionate influence of highly expressed genes and partially stabilizing the relationship between the expression mean and variance (Fig. \ref{fig:fig-s1-normalization} A and B). The resulting filtered log$_2$-CPM matrix was used as the expression phenotype for the primary \textit{cis}-eQTL analysis.
+Gene-level RNA-seq counts were restricted to samples that could be matched to genotyped Wisconsin Diversity Panel lines. Lowly expressed genes were removed using \texttt{edgeR::filterByExpr}. Library-size normalization factors were subsequently estimated using the trimmed mean of M-values (TMM) method, and expression values were converted to log$_2$ counts per million (log$_2$-CPM) using \texttt{edgeR}[@edgeR], with a prior count of 2 [@edgeR]. The log$_2$ transformation compresses the dynamic range of RNA-seq expression values, reducing the disproportionate influence of highly expressed genes and partially stabilizing the relationship between the expression mean and variance (Fig. \ref{fig:fig-s1-normalization} A and B). The resulting filtered log$_2$-CPM matrix was used as the expression phenotype for the primary \textit{cis}-eQTL analysis.
 
 For analyses of transcriptome-wide expression diversity, counts from the same filtered gene set were transformed using the variance-stabilizing transformation (VST) implemented in \texttt{DESeq2}[@love2014DESeq2]. In contrast to a simple logarithmic transformation, VST uses the estimated mean--dispersion relationship of the RNA-seq count data to transform expression values such that their variance is approximately independent of their mean. This is particularly useful for comparisons of expression variability across genes and samples because it reduces the strong dependence of variance on expression level that is characteristic of count data (Fig. \ref{fig:fig-s1-normalization} C). The VST-transformed expression matrix was therefore used for transcriptome-diversity analyses, including comparisons of genome-wide expression variation among genetic groups.
 
@@ -55,7 +56,7 @@ Absolute distance between each tested variant and the transcription start site (
 
 For further evaluation of TSS distance, the 2-Mb *cis* interval was divided into ten 200-kb bins. The number of tested variant--gene pairs was similar across distance bins, ranging from approximately 90.6 to 93.0 million tests per bin (Fig. \ref{fig:fig-s3-ihw}C). The corresponding $P$-value distributions were then examined separately within each distance stratum (Fig. \ref{fig:fig-s3-ihw}D). Proximal bins showed a substantially greater excess of very small $P$-values, consistent with a higher frequency of true regulatory associations near the TSS, whereas the non-significant portion of the $P$-value distribution was broadly comparable across distance strata. Together, these diagnostics supported absolute TSS distance as an informative and appropriately ordered covariate for IHW, and it was therefore used in the primary analysis.
 
-Because the complete *cis*-eQTL scan comprised approximately $9.2\times10^8$ association tests, IHW was applied using a truncated $P$-value representation to reduce memory requirements. Associations with $P\leq10^{-3}$ were retained explicitly, while the total number of hypotheses in each of the ten TSS-distance bins was calculated from the complete OSCA output and supplied to IHW. This approach retained the correct number of hypotheses represented by each covariate stratum without requiring storage of the large number of clearly non-significant association results.
+Because the complete *cis*-eQTL scan comprised approximately $9.2\times10^8$ association tests, IHW was applied using a truncated $P$-value representation to reduce memory requirements. Associations with $P\leq10^{-3}$ were retained explicitly, while the total number of hypotheses in each of the ten TSS-distance bins was calculated from the complete OSCA[@zhang2019osca] output and supplied to IHW. This approach retained the correct number of hypotheses represented by each covariate stratum without requiring storage of the large number of clearly non-significant association results.
 
 IHW was performed at a target false discovery rate (FDR) of 1%, with TSS-distance bins treated as an ordinal covariate. Data-driven hypothesis weights were estimated using fivefold cross-validation with a fixed random seed of 1 and subsequently incorporated into the weighted Benjamini--Hochberg procedure. Variant--gene associations with IHW-adjusted $P<0.01$ were considered significant *cis*-eQTLs.
 
@@ -157,7 +158,7 @@ For each transcription factor, 5,000 permutations were performed by independentl
 knitr::include_graphics("../results/figures/supp/Fig_PCA_All.png")
 ```
 
-```{r fig-s5-egene-proportion, out.width="100%", fig.cap="Summary of cis-eQTL discovery in the WiDiv panel, showing the proportion of expressed genes classified as eGenes under the primary association-mapping procedure."}
+```{r fig-s5-egene-proportion, out.width="100%", fig.cap="Summary of cis-eQTL discovery in the WiDiv panel. (A) Distribution of the number of associated SNPs per eGene. (B) Distribution of distances between associated SNPs and the transcription start site of their target gene. (C) Minor allele frequency distribution of associated SNPs."}
 knitr::include_graphics("../results/figures/supp/Fig_eGene_Prop.png")
 ```
 
@@ -175,7 +176,7 @@ knitr::include_graphics("../results/figures/supp/Fig_Heritability_density.png")
 knitr::include_graphics("../results/figures/supp/Fig_SX2_Diag.png")
 ```
 
-```{r fig-s9-delta-r2-by-credible-set-size, out.width="75%", fig.cap="Difference in held-out prediction performance between SuSiE and OSCA across SuSiE credible-set sizes. Delta R2 is calculated as SuSiE test R2 minus OSCA test R2; positive values indicate better held-out prediction by SuSiE. Boxplot statistics use all genes, while the displayed y-axis range is limited to the central 99% of Delta R2 values to show the distributions around zero."}
+```{r fig-s9-delta-r2-by-credible-set-size, out.width="75%", fig.cap="Difference in held-out prediction performance between fine-mapped multi variants models and single-variant models across SuSiE credible-set sizes. Delta R2 is calculated as multi variants model test R2 minus single-variant models test R2; positive values indicate better held-out prediction by the fine-mapped multi variants model model."}
 knitr::include_graphics("../results/figures/supp/Fig_Delta_R2_by_SuSiE_credible_set_size.png")
 ```
 
