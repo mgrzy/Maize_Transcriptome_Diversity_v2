@@ -100,7 +100,7 @@ g.cv <- ggplot(cv, aes(Group, cv, fill = Group)) +
                 labels = trans_format("log10", math_format(10^.x))) +
   annotation_logticks(sides = "l") +
   scale_x_discrete(labels = c("Tropical", "Broad\norigin", "Mixed", "SS", "NSS", "Iodent")) +
-  labs(x = "Subpopulation", y = "Coefficient of variation") +
+  labs(x = "Subpopulation", y = "Variance") +
   theme(legend.position = "none")
 
 # --- Combined figure layout ----------------------------------------------

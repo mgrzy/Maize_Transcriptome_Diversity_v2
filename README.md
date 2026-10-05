@@ -78,6 +78,26 @@ Used for compute-intensive workflows such as genotype processing, OSCA/eQTL anal
 
 See `scripts/local/analysis/README.md` for the analysis-folder map and execution-order notes.
 
+To export supplementary Tables S1–S3 into one Excel workbook, install the R
+packages `data.table` and `openxlsx`, then run from the repository root:
+
+```bash
+Rscript scripts/local/processing/Export_Supplementary_Tables.R
+```
+
+The output is `results/tables/Supplementary_Tables_S1_S3.xlsx`; an optional first
+argument selects another output path. S1 contains saved CCA/PCA scores with
+sample metadata. S2 lists one saved lead variant per credible set with its PIP.
+S3 contains the saved aFCn results directly. The full list of fine-mapped
+variant/credible-set memberships and PIPs is exported separately to
+`results/tables/Supplementary_Tables_S1_S3_Full_fine_mapped_variants.csv`,
+without eGene filtering. With a custom workbook path, the CSV uses the same
+directory and filename stem plus `_Full_fine_mapped_variants.csv`.
+The workbook contains only result sheets, with widened columns and continuous
+numeric results displayed to five decimal places. Both exports round continuous
+numeric results to five decimal places; source analysis files retain their
+original precision. No analyses are refitted by this export.
+
 ## Reproducibility
 
 The `.gitignore` is intentionally strict for large genomics files and generated results. If package reproducibility is managed with `renv`, commit `renv.lock`, `renv/activate.R`, and `renv/settings.json`, but never the local `renv/library/` cache.
