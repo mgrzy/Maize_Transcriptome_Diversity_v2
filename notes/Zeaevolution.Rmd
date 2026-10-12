@@ -57,7 +57,7 @@ knitr::include_graphics("images/geno_pheno.png")
 knitr::include_graphics("images/Wallace.png")
 ```
 \par
-\raggedleft\tiny Wallace et al. (2025)\par
+\raggedleft\tiny Wallace et al. (2012)\par
 
 :::
 
@@ -116,11 +116,11 @@ knitr::include_graphics("images/fm.png")
 
 ### Scientific questions
 
-- Has breeding reduced transcriptomic diversity together with genetic diversity?
+- Has breeding reduced transcriptomic diversity in parallel with genetic diversity?
 
 - What is the genetic architecture underlying expression variation?
 
-- Did breeding change the frequencies of regulatory alleles?
+- Has breeding shifted the frequencies of regulatory alleles?
 
 # Results
 
