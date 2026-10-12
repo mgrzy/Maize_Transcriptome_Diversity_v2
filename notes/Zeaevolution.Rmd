@@ -1,0 +1,309 @@
+---
+title: 'Haplotype-rich *cis*-regulation underlies transcriptomic diversity across the breeding history of maize \newline (*Zea mays*)'
+author: Marcin Grzybowski
+classoption: "aspectratio=169"
+
+format:
+  beamer:
+    theme: Madrid
+    section-titles: false
+
+header-includes:
+  - \institute[]{Institute of Experimental Plant Biology and Biotechnology\\Faculty of Biology\\University of Warsaw}
+  - \usepackage{tikz}
+  - |
+    \addtobeamertemplate{title page}{}{%
+      \begin{tikzpicture}[remember picture,overlay]
+      \node[anchor=south east, xshift=-0.5cm, yshift=0.7cm] at (current page.south east) {%
+        \includegraphics[width=1.6cm]{images/LogoWydzial.png}
+      };
+      \end{tikzpicture}
+    }
+  - \useoutertheme{miniframes}
+  - \setbeamertemplate{navigation symbols}{}
+  - \definecolor{mygreen}{HTML}{6AA84F}
+  - \setbeamercolor{palette primary}{bg=mygreen, fg=white}
+  - \setbeamercolor{palette secondary}{bg=mygreen, fg=white}
+  - \setbeamercolor{palette tertiary}{bg=mygreen, fg=white}
+  - \setbeamercolor{palette quaternary}{bg=mygreen, fg=white}
+  - \setbeamercolor{structure}{fg=mygreen}
+  - \setbeamercolor{section in head/foot}{bg=mygreen, fg=white}
+  - \setbeamercolor{subsection in head/foot}{bg=mygreen, fg=white}
+---
+
+# Introduction
+
+### Gene expression connects genotype with phenotype
+
+:::: {.columns}
+
+::: {.column width="48%"}
+
+```{r}
+#| echo: false
+#| out-width: 100%
+
+knitr::include_graphics("images/geno_pheno.png")
+```
+
+:::
+
+::: {.column width="48%"}
+
+```{r}
+#| echo: false
+#| out-width: 100%
+
+knitr::include_graphics("images/Wallace.png")
+```
+\par
+\raggedleft\tiny Wallace et al. (2025)\par
+
+:::
+
+::::
+
+### Modern breeding reshaped maize genetic diversity 
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 80%
+
+knitr::include_graphics("images/pnas_2.jpeg")
+```
+\par
+\raggedleft\tiny van Heerwaarden et al. (2012)\par
+
+### *cis*-regulatory variation provides a mechanistic link
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 80%
+
+knitr::include_graphics("images/eqtl.png")
+```
+
+### Fine-mapping 
+
+:::: {.columns}
+
+::: {.column width="48%"}
+
+```{r}
+#| echo: false
+#| out-width: 100%
+
+knitr::include_graphics("images/two_peaks.png")
+```
+
+:::
+
+::: {.column width="48%"}
+
+```{r}
+#| echo: false
+#| out-width: 100%
+knitr::include_graphics("images/fm.png")
+```
+\par
+\raggedleft\tiny Li \& Zhou (2025)\par
+
+:::
+
+::::
+
+### Scientific questions
+
+- Has breeding reduced transcriptomic diversity together with genetic diversity?
+
+- What is the genetic architecture underlying expression variation?
+
+- Did breeding change the frequencies of regulatory alleles?
+
+# Results
+
+### 631 diverse inbred lines capture modern maize diversity
+
+:::: {.columns}
+
+::: {.column width="43%"}
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
+
+knitr::include_graphics("images/TPJ_WiDiv_RNA.png")
+```
+
+- Wisconsin Diversity Panel
+
+- Grown in Lincol, NE, 2021
+
+- RNA-seq from 631 inbred lines
+
+:::
+
+::: {.column width="55%"}
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
+
+knitr::include_graphics("../results/figures/supp/Fig_PCA_All.png")
+```
+
+:::
+
+::::
+
+### Genomic and transcriptomic diversity across maize subpopulations
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 60%
+
+knitr::include_graphics("../results/figures/Fig1.png")
+```
+
+### *cis*-regulatory variation is widespread across the transcriptome
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 75%
+
+knitr::include_graphics("../results/figures/presentation/Fig_eGene_Prop_A.png")
+```
+
+\vspace{-0.35cm}
+
+\begin{center}
+\small
+\setlength{\tabcolsep}{5pt}
+
+\begin{tabular}{@{}lr@{}}
+\toprule
+\textbf{Mapping summary} & \\
+\midrule
+\textit{cis}-eGenes & 17,469 (98.9\%$^{*}$) \\
+Unique SNPs & 15.1 M \\
+Gene--variant pairs & 69.3 M \\
+\bottomrule
+\multicolumn{2}{l}{\scriptsize $^{*}$ FDR 5\%}
+\end{tabular}
+
+\end{center}
+
+### *PSBS* contains multiple independent regulatory signals
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
+
+knitr::include_graphics("../results/figures/presentation/Fig2_PSBS_LD_PIP.png")
+```
+
+### Most genes harbor multiple independent *cis*-regulatory signals 
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
+
+knitr::include_graphics("../results/figures/presentation/Fig2_AB.png")
+```
+
+### Most *cis*-eQTLs have modest effect sizes
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
+
+knitr::include_graphics("../results/figures/presentation/Fig2C_Fig4A_aFCn.png")
+```
+
+### More complex *cis* architecture is associated with higher expression heritability
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
+
+knitr::include_graphics("../results/figures/presentation/Fig2E_S8CD.png")
+```
+
+### Fine-mapped variants concentrate in regulatory annotations
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
+
+knitr::include_graphics("../results/figures/Fig3.png")
+```
+
+### Expression divergence tracks regulatory allele-frequency differentiation
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
+
+knitr::include_graphics("../results/figures/presentation/Fig4D.png")
+```
+
+### Regulatory haplotype frequencies explain population expression differences (*SUCROSE SYNTHASE1*)
+
+```{r}
+#| echo: false
+#| fig-align: center
+#| out-width: 100%
+
+knitr::include_graphics("../results/figures/presentation/Fig4_EI.png")
+```
+
+# Summary 
+
+### Summary
+
+- Breeding reduced genetic diversity more than transcriptomic diversity
+
+- Gene expression is controlled by multiple, mostly modest-effect *cis*-regulatory variants
+
+- Expression divergence between breeding groups is associated with shifts in regulatory allele frequencies
+
+### Acknowledgments
+
+- James Schnable, UNL
+
+\begin{tikzpicture}[remember picture,overlay]
+\node[anchor=south east, xshift=-0.5cm, yshift=0.8cm] at (current page.south east) {%
+  \begin{minipage}{0.5\textwidth}
+  \centering
+  \includegraphics[width=\linewidth]{images/logo-poziom-en.png}
+  \\[0.5em]
+  {\small 2023/49/B/NZ9/00766}
+  \end{minipage}
+};
+\end{tikzpicture}
+
+### Questions? 
+
+\begin{tikzpicture}[remember picture,overlay]
+\node[anchor=center] at (current page.center) {%
+  \begin{minipage}{3cm}
+  \centering
+  \href{https://www.biorxiv.org/content/10.64898/2026.02.19.706772v1}{%
+    \includegraphics[width=2.8cm]{images/biorxiv_paper_qr.png}}
+  \\[0.3em]
+  {\small Read the paper}
+  \end{minipage}
+};
+\end{tikzpicture}
