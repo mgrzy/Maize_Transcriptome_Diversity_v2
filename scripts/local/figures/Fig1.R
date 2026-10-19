@@ -40,6 +40,11 @@ cca <- read.csv("results/full/CCA/CCA.csv")
 
 # R2
 r2 <- read.csv("results/full/GeneExpressionVariance/All_R2.csv")
+finite_r2 <- r2$r2[is.finite(r2$r2)]
+if (!length(finite_r2)) stop("No finite R-squared values to annotate.")
+mean_r2 <- mean(finite_r2)
+# Significance label supplied by the user; All_R2.csv contains no P values.
+r2_significance_label <- "P < 0.01"
 
 # PCA plot: PC1 vs PC2 with legend inside to save space
 g1 <- ggplot(pc, aes(PC1, PC2, colour = Group)) +
@@ -64,11 +69,15 @@ g2 <- ggplot(cca, aes(CCA1, CCA2, colour = Group)) +
 # Histogram of R^2 values
 g3 <- ggplot(r2, aes(x = r2)) +
   geom_histogram(binwidth = 0.0025, alpha = 0.7, colour = myPal[2], fill = myPal[2]) +
-  labs(x = "Proportion variance explained", y = "Count")
+  labs(x = "Proportion variance explained", y = "Count") +
+  annotate("text", x = Inf, y = Inf,
+           label = sprintf("Mean R² = %.3f (%.1f%%)\n%s",
+                           mean_r2, 100 * mean_r2, r2_significance_label),
+           hjust = 1.05, vjust = 1.3, size = 2.8)
 
 # --- Fig2 panels ----------------------------------------------------------
 
-cv <- read_csv("results/full/GeneExpressionVariance/All_CV.csv") %>%
+sd_data <- read_csv("results/full/GeneExpressionVariance/All_SD.csv") %>%
   mutate(
     Group = str_replace_all(Group, "Broad[_ ]origin-public", "Broad origin"),
     Group = factor(Group, levels = c("Tropical", "Broad origin", "Mixed", "SS", "NSS", "IDT"))
@@ -80,7 +89,7 @@ n.div.pop <- n.div %>%
   filter(pop %in% c("Tropical", "Broad_origin-public", "Broad origin-public", "Mixed", "SS", "NSS", "IDT")) %>%
   mutate(
     pop = str_replace_all(pop, "Broad[_ ]origin-public", "Broad origin"),
-    pop = factor(pop, levels = levels(cv$Group))
+    pop = factor(pop, levels = levels(sd_data$Group))
   )
 
 # Nucleotide diversity by subpopulation
@@ -92,25 +101,24 @@ g.pi <- ggplot(n.div.pop, aes(pop, avg_pi, fill = pop)) +
   theme(legend.position = "none") +
   coord_cartesian(ylim = c(0, 0.1))
 
-# Transcriptomic CV by subpopulation
-g.cv <- ggplot(cv, aes(Group, cv, fill = Group)) +
+# Flowering-time-adjusted expression SD by subpopulation.
+# Generate the summary with analysis/expression/Expression_SD_by_Subpopulation.R.
+g.sd <- ggplot(sd_data, aes(Group, sd, fill = Group)) +
   geom_boxplot(alpha = 0.8, width = 0.5, outlier.size = 0.6) +
   scale_fill_manual(values = myPal) +
   scale_y_log10(breaks = trans_breaks("log10", function(x) 10^x),
                 labels = trans_format("log10", math_format(10^.x))) +
   annotation_logticks(sides = "l") +
   scale_x_discrete(labels = c("Tropical", "Broad\norigin", "Mixed", "SS", "NSS", "Iodent")) +
-  labs(x = "Subpopulation", y = "Variance") +
+  labs(x = "Subpopulation", y = "Standard deviation") +
   theme(legend.position = "none")
 
 # --- Combined figure layout ----------------------------------------------
 
 top_row <- wrap_plots(g1, g2, g3, nrow = 1)
-bottom_row <- wrap_plots(g.pi, g.cv, nrow = 1)
+bottom_row <- wrap_plots(g.pi, g.sd, nrow = 1)
 
-combined_plot <- top_row / bottom_row +
-  plot_annotation(tag_levels = "A") &
-  theme(plot.tag = element_text(size = base_font_size, face = "plain"))
+combined_plot <- top_row / bottom_row
 
 # Export figure
 output_path <- "results/figures/Fig1.png"

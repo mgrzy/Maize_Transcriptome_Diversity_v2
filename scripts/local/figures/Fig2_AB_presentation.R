@@ -35,14 +35,25 @@ if (length(setdiff(required_objects, loaded_objects))) {
 # including the zero-CS bin shown in the original panel.
 median_cs <- median(rep(cs$cs, times = cs$n))
 genes_multiple_cs <- sum(cs$n[cs$cs > 1])
+# Use all genes represented in the left panel, including its zero-CS bin.
+percent_genes_multiple_cs <- 100 * genes_multiple_cs / sum(cs$n)
+single_variant_cs <- sum(cs.var$nCS[cs.var$nVar == 1])
+percent_single_variant_cs <- 100 * single_variant_cs / sum(cs.var$nCS)
+cs_annotation <- sprintf("Single-variant CS: %s (%.1f%%)",
+                         comma(single_variant_cs), percent_single_variant_cs)
 annotation_text <- paste0(
   "Median CS per gene: ", median_cs,
-  "\nGenes with >1 CS: ", comma(genes_multiple_cs)
+  "\nGenes with >1 CS: ", comma(genes_multiple_cs),
+  sprintf(" (%.1f%%)", percent_genes_multiple_cs)
 )
 g1 <- g1 +
   labs(x = "Number of credible causal sets") +
   annotate("text", x = Inf, y = Inf, label = annotation_text,
            hjust = 1.05, vjust = 1.3, size = 3)
+g2 <- g2 +
+  annotate("text", x = Inf, y = Inf,
+           label = cs_annotation,
+           hjust = 1.05, vjust = 1.1, size = 3)
 
 figure_file <- "results/figures/presentation/Fig2_AB.png"
 dir.create(dirname(figure_file), recursive = TRUE, showWarnings = FALSE)
@@ -50,3 +61,4 @@ ggsave(figure_file, plot = g1 | g2,
        width = 18, height = 6, units = "cm", dpi = 300)
 message("Saved presentation figure: ", figure_file)
 message(annotation_text)
+message(cs_annotation)

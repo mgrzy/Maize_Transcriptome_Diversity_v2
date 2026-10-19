@@ -54,7 +54,7 @@ knitr::include_graphics("images/geno_pheno.png")
 #| echo: false
 #| out-width: 100%
 
-knitr::include_graphics("images/Wallace.png")
+knitr::include_graphics("images/Wallece2.png")
 ```
 \par
 \raggedleft\tiny Wallace et al. (2012)\par
@@ -105,10 +105,8 @@ knitr::include_graphics("images/two_peaks.png")
 ```{r}
 #| echo: false
 #| out-width: 100%
-knitr::include_graphics("images/fm.png")
+knitr::include_graphics("images/susie.png")
 ```
-\par
-\raggedleft\tiny Li \& Zhou (2025)\par
 
 :::
 
@@ -249,6 +247,9 @@ knitr::include_graphics("../results/figures/presentation/Fig2E_S8CD.png")
 knitr::include_graphics("../results/figures/Fig3.png")
 ```
 
+\par
+\raggedleft\tiny Rici et al. (2019) & Tu et al. (2020)\par
+
 ### Expression divergence tracks regulatory allele-frequency differentiation
 
 ```{r}
@@ -282,6 +283,14 @@ knitr::include_graphics("../results/figures/presentation/Fig4_EI.png")
 ### Acknowledgments
 
 - James Schnable, UNL
+
+```{r}
+#| echo: false
+#| fig-align: left
+#| out-width: 15%
+
+knitr::include_graphics("images/Schnable_Lab_logo.jpg")
+```
 
 \begin{tikzpicture}[remember picture,overlay]
 \node[anchor=south east, xshift=-0.5cm, yshift=0.8cm] at (current page.south east) {%
